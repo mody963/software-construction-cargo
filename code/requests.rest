@@ -1,1 +1,2 @@
-GET http://localhost:3000/
+GET http://localhost:3000/api/v1/item_groups
+api_key: d4s2a0b0a1n4a0l0y7t
