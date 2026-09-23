@@ -12,7 +12,7 @@ def _data():
 
 
 
-def test_get_locations(_data):
+def test_get_location(_data):
     url = _data['url'] + 'locations'
 
     # Send a GET request to the API
