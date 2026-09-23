@@ -12,7 +12,7 @@ def _data():
 
 
 
-def test_get_orders(_data):
+def test_get_order(_data):
     url = _data['url'] + 'orders'
 
     # Send a GET request to the API
