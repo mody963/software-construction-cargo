@@ -40,3 +40,24 @@ def test_get_client_401(_data: dict[str, str]) -> None:
     # Verify that the status code is 401
     assert status_code == 401
 
+
+def test_get_client_404(_data: dict[str, str]) -> None:
+    url: str = f"{_data['base_url']}clients/999999"
+
+    response: requests.Response = requests.get(
+        url,
+        headers={'API_KEY': _data['api_key']}
+    )
+
+    assert response.status_code == 404
+
+
+def test_get_client_405(_data: dict[str, str]) -> None:
+    url: str = f"{_data['base_url']}clients"
+
+    response: requests.Response = requests.delete(
+        url,
+        headers={'API_KEY': _data['api_key']}
+    )
+
+    assert response.status_code == 405
