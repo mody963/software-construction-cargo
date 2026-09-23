@@ -1,32 +1,23 @@
-# Prerequisites
-*.d
+# Created by venv; see https://docs.python.org/3/library/venv.html
+*
+# Python virtual environment
+.venv/
+venv/
+env/
+ENV/
+.venv.bak/
+venv.bak/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Common venv directories/files created by Python
+bin/
+lib/
+include/
+share/
+Scripts/
+Lib/
+pyvenv.cfg
+pip-selfcheck.json
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# Cache folders
+__pycache__/
+.pytest_cache/
