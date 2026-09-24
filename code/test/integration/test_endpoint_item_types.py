@@ -12,8 +12,8 @@ def _data():
 
 
 
-def test_get_item(_data: dict[str,str]):
-    url = _data['url'] + 'items'
+def test_get_item_type(_data):
+    url = _data['url'] + 'item_types'
 
     # Send a GET request to the API
     response = requests.get(url, headers={'API_KEY': _data['api_key']})

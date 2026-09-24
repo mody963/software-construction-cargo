@@ -10,7 +10,7 @@ def _data():
     }
 
 
-def test_get_warehouse(_data):
+def test_get_warehouse(_data: dict[str,str]):
     url = _data["url"] + "warehouses"
 
     # Send a GET request to the API
