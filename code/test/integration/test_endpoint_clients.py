@@ -42,22 +42,27 @@ def test_get_client_401(_data: dict[str, str]) -> None:
 
 
 def test_get_client_404(_data: dict[str, str]) -> None:
-    url: str = f"{_data['base_url']}clients/999999" # hierbij heb je dus een compleet verkeerd pad
+    url: str = f"http://{_data['host']}{_data['api_path']}clients/999999" # Ik vraag een client op die niet bestaat.
 
     response: requests.Response = requests.get(
         url,
         headers={'API_KEY': _data['api_key']}
     )
+    print(response.status_code)
+    print(response.text)
 
     assert response.status_code == 404
 
+    # deze geeft momenteel geen 404 mee maar alsnog een 200 maar dan samen met null zelfs al werkt de endpoint zelf niet omdat het niet bestaand is.
+    # het zoekt dus nogsteeds naar de client maar geeft gewoon geen juiste waardes terug mee. 
+
 
 def test_get_client_405(_data: dict[str, str]) -> None:
-    url: str = f"{_data['base_url']}clients"
+    url: str = f"http://{_data['host']}{_data['api_path']}clients"
 
     response: requests.Response = requests.delete(
         url,
         headers={'API_KEY': _data['api_key']}
-    ) # je kan geen delete gebruiken op deze edpoint
+    ) # DELETE is niet toegestaan op dit endpoint
 
     assert response.status_code == 405
