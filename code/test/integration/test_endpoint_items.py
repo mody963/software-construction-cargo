@@ -45,8 +45,6 @@ def test_get_items_no_api_key(_data: dict[str, str]):
 
 
 # item/{id}
-
-
 def test_get_item_by_id(_data: dict[str, str]):
     url = _data["url"] + "items/1"
 
