@@ -71,6 +71,68 @@ def test_get_item_invalid_id(_data: dict[str, str]):
     assert response.status_code == 400
 
 
+# /items/id/inventory
+def test_get_item_id_inventory(_data: dict[str, str]):
+    url = _data["url"] + "items/1/inventory"
+
+    # Send a GET request to the API
+    response = requests.get(url, headers={"API_KEY": _data["api_key"]})
+
+    # Get the status code and response data
+    status_code = response.status_code
+
+    # Verify that the status code is 200 (OK)
+    assert status_code == 200
+
+
+def test_get_item_id_inventory_wrong_api_key(_data: dict[str, str]):
+    url = _data["url"] + "items/1/inventory"
+
+    response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
+
+    assert response.status_code == 401
+
+
+def test_get_item_id_inventory_no_api_key(_data: dict[str, str]):
+    url = _data["url"] + "items/1/inventory"
+
+    response = requests.get(url)
+
+    assert response.status_code == 401
+
+
+# items/id/inventory/totals
+
+
+def test_get_item_id_inventory_totals(_data: dict[str, str]):
+    url = _data["url"] + "items/1/inventory"
+
+    # Send a GET request to the API
+    response = requests.get(url, headers={"API_KEY": _data["api_key"]})
+
+    # Get the status code and response data
+    status_code = response.status_code
+
+    # Verify that the status code is 200 (OK)
+    assert status_code == 200
+
+
+def test_get_item_id_inventory_totals_wrong_api_key(_data: dict[str, str]):
+    url = _data["url"] + "items/1/inventory"
+
+    response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
+
+    assert response.status_code == 401
+
+
+def test_get_item_id_inventory_totals_no_api_key(_data: dict[str, str]):
+    url = _data["url"] + "items/1/inventory"
+
+    response = requests.get(url)
+
+    assert response.status_code == 401
+
+
 # api key mag niet deleten
 def test_delete_items_not_allowed(_data: dict[str, str]):
     url = _data["url"] + "items"

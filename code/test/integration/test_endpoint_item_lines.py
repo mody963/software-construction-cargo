@@ -129,6 +129,36 @@ def test_get_itemlines_id_no_api_key(_data: dict[str, str]):
     assert response.status_code == 401
 
 
+# GET itemlines/id/items
+def test_get_itemlines_id_items(_data: dict[str, str]):
+    url = _data["url"] + "item_lines/1/items"
+
+    # Send a GET request to the API
+    response = requests.get(url, headers={"API_KEY": _data["api_key"]})
+
+    # Get the status code and response data
+    status_code = response.status_code
+
+    # Verify that the status code is 200 (OK)
+    assert status_code == 200
+
+
+def test_get_itemlines_id_items_wrong_api_key(_data: dict[str, str]):
+    url = _data["url"] + "item_lines/1/items"
+
+    response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
+
+    assert response.status_code == 401
+
+
+def test_get_itemlines_id_items_no_api_key(_data: dict[str, str]):
+    url = _data["url"] + "item_lines/1/items"
+
+    response = requests.get(url)
+
+    assert response.status_code == 401
+
+
 # PUT
 
 
