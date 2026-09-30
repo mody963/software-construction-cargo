@@ -35,7 +35,7 @@ def test_get_shipments_wrong_api_key_401(_data: dict[str, str]) -> None:
     assert response.status_code == 401
 
 
-def test_get_shipment_not_found_404(_data: dict[str, str]) -> None:
+def test_get_shipment_invalid_int_not_found_404(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}shipments/9999999" # shipment die niet bestaat
 
     response: requests.Response = requests.get(url, headers={'API_KEY': _data['api_key']})
@@ -46,6 +46,28 @@ def test_get_shipment_not_found_404(_data: dict[str, str]) -> None:
 
     # zelfde soort bug als bij clients: dit endpoint geeft momenteel 200 + null terug
     # in plaats van 404, ook al bestaat de shipment niet.
+
+def test_get_shipment_invalid_id_string_not_found_404(_data: dict[str, str]) -> None:
+    url: str = f"http://{_data['host']}{_data['api_path']}shipments/AAAAAAAAAAA" # shipment die niet bestaat
+
+    response: requests.Response = requests.get(url, headers={'API_KEY': _data['api_key']})
+    print(response.status_code)
+    print(response.text)
+
+    assert response.status_code == 404
+
+    # zelfde soort bug als bij clients
+
+def test_get_shipment_invalid_id_string_integer_non_alphanumeric_not_found_404(_data: dict[str, str]) -> None:
+    url: str = f"http://{_data['host']}{_data['api_path']}shipments/ABC6d1Xyz$" # shipment die niet bestaat
+
+    response: requests.Response = requests.get(url, headers={'API_KEY': _data['api_key']})
+    print(response.status_code)
+    print(response.text)
+
+    assert response.status_code == 404
+
+    # zelfde soort bug als bij clients
 
 
 def test_get_shipment_by_id_200(_data: dict[str, str]) -> None:
