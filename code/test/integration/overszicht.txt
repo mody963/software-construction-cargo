@@ -1,0 +1,245 @@
+====================================================================
+TEST_ENDPOINT_CLIENTS.PY
+====================================================================
+
+test_get_client_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_get_client_401
+  Verwacht: 401
+  Voorspeld (nu): 401
+  Klopt: JA
+
+test_get_client_404
+  Verwacht: 404
+  Voorspeld (nu): 200 (+ null body)
+  Klopt: NEE
+  Reden: get_client() geeft None terug bij onbekend id, maar wordt zonder
+  check met status 200 teruggestuurd. Er zit geen "if client is None: 404".
+
+test_get_client_405
+  Verwacht: 405
+  Voorspeld (nu): 500
+  Klopt: NEE
+  Reden: DELETE /clients zonder id -> handle_delete_version_1 checkt eerst
+  de rechten (key heeft die wel) en probeert daarna int(paths[1]) uit te
+  lezen. paths[1] bestaat niet -> IndexError -> gevangen door de algemene
+  except Exception in do_DELETE -> 500. (Zat al zo in het origineel.)
+
+test_get_client_by_id_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_get_client_orders_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_post_client_201
+  Verwacht: 201
+  Voorspeld (nu): 201
+  Klopt: JA
+
+test_post_and_get_client_200
+  Verwacht: 201 (POST) -> 200 (GET)
+  Voorspeld (nu): 201 -> 200
+  Klopt: JA
+
+test_post_client_403
+  Verwacht: 403
+  Voorspeld (nu): 403
+  Klopt: JA
+
+test_put_client_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_put_and_get_client_200
+  Verwacht: 200 (PUT) -> 200 (GET)
+  Voorspeld (nu): 200 -> 200
+  Klopt: JA
+
+test_put_client_403
+  Verwacht: 403
+  Voorspeld (nu): 403
+  Klopt: JA
+
+test_delete_client_200
+  Verwacht: 201 (POST) -> 200 (DELETE)
+  Voorspeld (nu): 201 -> 200
+  Klopt: JA
+
+test_delete_and_get_client_404
+  Verwacht: 201 (POST) -> 200 (DELETE) -> 404 (GET)
+  Voorspeld (nu): 201 -> 200 -> 200 (+ null body)
+  Klopt: NEE (laatste stap)
+  Reden: zelfde oorzaak als test_get_client_404, geen None-check na delete.
+
+test_delete_client_403
+  Verwacht: 403
+  Voorspeld (nu): 403
+  Klopt: JA
+
+====================================================================
+TEST_ENDPOINT_ORDERS.PY
+====================================================================
+
+test_get_order_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_get_order_401
+  Verwacht: 401
+  Voorspeld (nu): 401
+  Klopt: JA
+
+test_get_order_404
+  Verwacht: 404
+  Voorspeld (nu): 200 (+ null body)
+  Klopt: NEE
+  Reden: get_order() geeft None terug bij onbekend id, geen None-check
+  voordat status 200 wordt teruggestuurd.
+
+test_get_order_by_id_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_get_order_items_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_post_order_201
+  Verwacht: 201
+  Voorspeld (nu): 201
+  Klopt: JA
+
+test_post_and_get_order_200
+  Verwacht: 201 (POST) -> 200 (GET)
+  Voorspeld (nu): 201 -> 200
+  Klopt: JA
+
+test_post_order_403
+  Verwacht: 403
+  Voorspeld (nu): 403
+  Klopt: JA
+
+test_put_order_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_put_and_get_order_200
+  Verwacht: 200 (PUT) -> 200 (GET)
+  Voorspeld (nu): 200 -> 200
+  Klopt: JA
+
+test_put_order_403
+  Verwacht: 403
+  Voorspeld (nu): 403
+  Klopt: JA
+
+test_delete_order_403
+  Verwacht: 403
+  Voorspeld (nu): 403
+  Klopt: JA
+  Opmerking: geen enkele API key in user.json heeft delete=True voor orders.
+
+====================================================================
+TEST_ENDPOINT_SHIPMENTS.PY
+====================================================================
+
+test_get_shipment_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_get_shipment_401
+  Verwacht: 401
+  Voorspeld (nu): 401
+  Klopt: JA
+
+test_get_shipment_404
+  Verwacht: 404
+  Voorspeld (nu): 200 (+ null body)
+  Klopt: NEE
+  Reden: get_shipment() geeft None terug bij onbekend id, geen None-check
+  voordat status 200 wordt teruggestuurd.
+
+test_get_shipment_by_id_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_get_shipment_items_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_get_shipment_orders_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_post_shipment_201
+  Verwacht: 201
+  Voorspeld (nu): 201
+  Klopt: JA
+
+test_post_and_get_shipment_200
+  Verwacht: 201 (POST) -> 200 (GET)
+  Voorspeld (nu): 201 -> 200
+  Klopt: JA
+
+test_post_shipment_403
+  Verwacht: 403
+  Voorspeld (nu): 403
+  Klopt: JA
+
+test_put_shipment_200
+  Verwacht: 200
+  Voorspeld (nu): 200
+  Klopt: JA
+
+test_put_and_get_shipment_200
+  Verwacht: 200 (PUT) -> 200 (GET)
+  Voorspeld (nu): 200 -> 200
+  Klopt: JA
+
+test_put_shipment_403
+  Verwacht: 403
+  Voorspeld (nu): 403
+  Klopt: JA
+
+test_delete_shipment_403
+  Verwacht: 403
+  Voorspeld (nu): 403
+  Klopt: JA
+  Opmerking: geen enkele API key in user.json heeft delete=True voor shipments.
+
+====================================================================
+SAMENVATTING - TESTS DIE FALEN
+====================================================================
+
+1. test_get_client_404            -> krijgt 200 i.p.v. 404
+2. test_get_client_405            -> krijgt 500 i.p.v. 405
+3. test_delete_and_get_client_404 -> krijgt 200 i.p.v. 404 (laatste GET)
+4. test_get_order_404             -> krijgt 200 i.p.v. 404
+5. test_get_shipment_404          -> krijgt 200 i.p.v. 404
+
+Onderliggende oorzaak (4x): de GET-by-id handlers in main.py checken niet
+of het resultaat None is voordat ze status 200 + de (lege) body terugsturen.
+Fix: na het ophalen van het object, controleren of het None is en dan
+self.send_response(404) sturen in plaats van 200.
+
+Onderliggende oorzaak (1x, de 405): handle_delete_version_1 leest
+paths[1] uit zonder te checken of die index bestaat. Bij een DELETE-call
+op een collection-route (zonder id) crasht dit met een IndexError, die
+wordt opgevangen door de generieke except Exception -> 500 in plaats van
+een nette 405.
