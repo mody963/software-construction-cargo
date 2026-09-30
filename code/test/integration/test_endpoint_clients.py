@@ -45,7 +45,7 @@ def test_get_clients_wrong_api_key_401(_data: dict[str, str]) -> None:
     assert status_code == 401
 
 
-def test_get_client_not_found_404(_data: dict[str, str]) -> None:
+def test_get_client_invalid_id_integer_not_found_404(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}clients/999999" # Ik vraag een client op die niet bestaat.
 
     response: requests.Response = requests.get(
@@ -59,6 +59,35 @@ def test_get_client_not_found_404(_data: dict[str, str]) -> None:
 
     # deze geeft momenteel geen 404 mee maar alsnog een 200 maar dan samen met null zelfs al werkt de endpoint zelf niet omdat het niet bestaand is.
     # het zoekt dus nogsteeds naar de client maar geeft gewoon geen juiste waardes terug mee. 
+
+def test_get_client_invalid_id_string_404(_data: dict[str, str]) -> None:
+    url: str = f"http://{_data['host']}{_data['api_path']}clients/abcdef" # Ik vraag een client op die niet bestaat.
+
+    response: requests.Response = requests.get(
+        url,
+        headers={'API_KEY': _data['api_key']}
+    )
+    print(response.status_code)
+    print(response.text)
+
+    assert response.status_code == 404
+
+    # deze geeft momenteel geen 404 maar een 500 dit is omdat het namelijkbij de do get niet door de try heen komt 
+    # omdat het daarna bij client get met id de melding heeft dat het geen id op int kan vinden en dus meteen een 500 returned uit het exept blok
+
+def test_get_client_invalid_id_string_integer_non_alphanumeric_not_found_404(_data: dict[str, str]) -> None:
+    url: str = f"http://{_data['host']}{_data['api_path']}clients/ABC6d1Xyz$" # Ik vraag een client op die niet bestaat.
+
+    response: requests.Response = requests.get(
+        url,
+        headers={'API_KEY': _data['api_key']}
+    )
+    print(response.status_code)
+    print(response.text)
+
+    assert response.status_code == 404
+
+    # zelfde als bij test_get_client_invalid_id_string_404
 
 
 def test_delete_clients_collection_not_allowed_405(_data: dict[str, str]) -> None:
