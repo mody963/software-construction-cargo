@@ -15,7 +15,7 @@ def _data():
 # GET
 
 # item_types
-def test_get_inventories(_data: dict[str, str]):
+def test_get_inventories_200(_data: dict[str, str]):
     url = _data["url"] + "inventories"
 
     # Send a GET request to the API
@@ -28,7 +28,7 @@ def test_get_inventories(_data: dict[str, str]):
     assert status_code == 200
 
 
-def test_get_inventories_wrong_api_key(_data: dict[str, str]):
+def test_get_inventories_401(_data: dict[str, str]):
     url = _data["url"] + "inventories"
 
     response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
@@ -36,7 +36,7 @@ def test_get_inventories_wrong_api_key(_data: dict[str, str]):
     assert response.status_code == 401
 
 
-def test_get_inventories_no_api_key(_data: dict[str, str]):
+def test_get_inventories_no_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "inventories"
 
     response = requests.get(url)
@@ -46,7 +46,7 @@ def test_get_inventories_no_api_key(_data: dict[str, str]):
 # POST
 
 
-def test_create_inventories(_data: dict[str, str]):
+def test_post_inventory_201(_data: dict[str, str]):
     url = _data["url"] + "inventories"
 
     item: dict[str, str | int | float] = {
@@ -64,7 +64,7 @@ def test_create_inventories(_data: dict[str, str]):
     assert response.status_code == 201
 
 
-def test_create_incomplete_inventories(_data: dict[str, str]):
+def test_post_inventory_incomplete_400(_data: dict[str, str]):
     url = _data["url"] + "inventories"
 
     item = {
@@ -82,7 +82,7 @@ def test_create_incomplete_inventories(_data: dict[str, str]):
 
 
 # Verkeerde types, strings waar int's en int's waar strings
-def test_create_incorrecte_inventories(_data: dict[str, str]):
+def test_post_inventory_incorrect_400(_data: dict[str, str]):
     url = _data["url"] + "inventories"
 
     item: dict[str, str | int | float] = {
