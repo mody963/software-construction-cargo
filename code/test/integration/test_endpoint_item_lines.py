@@ -13,7 +13,7 @@ def _data():
 
 
 # GET
-def test_get_item_lines(_data: dict[str, str]):
+def test_get_item_lines_200(_data: dict[str, str]):
     url = _data["url"] + "item_lines"
 
     # Send a GET request to the API
@@ -26,7 +26,7 @@ def test_get_item_lines(_data: dict[str, str]):
     assert status_code == 200
 
 
-def test_get_itemlines_wrong_api_key(_data: dict[str, str]):
+def test_get_item_lines_wrong_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_lines"
 
     response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
@@ -34,7 +34,7 @@ def test_get_itemlines_wrong_api_key(_data: dict[str, str]):
     assert response.status_code == 401
 
 
-def test_get_itemlines_no_api_key(_data: dict[str, str]):
+def test_get_item_lines_no_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_lines"
 
     response = requests.get(url)
@@ -43,7 +43,7 @@ def test_get_itemlines_no_api_key(_data: dict[str, str]):
 
 
 # POST
-def test_create_itemlines(_data: dict[str, str]):
+def test_post_item_line_201(_data: dict[str, str]):
     url = _data["url"] + "item_lines"
 
     item: dict[str, str | int | float] = {
@@ -59,7 +59,7 @@ def test_create_itemlines(_data: dict[str, str]):
     assert response.status_code == 201
 
 
-def test_create_incomplete_itemlines(_data: dict[str, str]):
+def test_post_item_line_incomplete_400(_data: dict[str, str]):
     url = _data["url"] + "item_lines"
 
     item = {
@@ -71,7 +71,7 @@ def test_create_incomplete_itemlines(_data: dict[str, str]):
     assert response.status_code == 400
 
 
-def test_create_incorrecte_itemline_types(_data: dict[str, str]):
+def test_post_item_line_incorrect_types_400(_data: dict[str, str]):
     url = _data["url"] + "item_lines"
 
     item: dict[str, str | int | float] = {
@@ -87,7 +87,7 @@ def test_create_incorrecte_itemline_types(_data: dict[str, str]):
     assert response.status_code == 400
 
 
-def test_create_empty_itemline(_data: dict[str, str]):
+def test_post_item_line_empty_400(_data: dict[str, str]):
     url = _data["url"] + "item_lines"
     item: dict[str, str | int | float] = {}
 
@@ -100,7 +100,7 @@ def test_create_empty_itemline(_data: dict[str, str]):
 
 
 # GET
-def test_get_itemlines_id(_data: dict[str, str]):
+def test_get_item_line_by_id_200(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1"
 
     # Send a GET request to the API
@@ -113,7 +113,7 @@ def test_get_itemlines_id(_data: dict[str, str]):
     assert status_code == 200
 
 
-def test_get_itemlines_id_wrong_api_key(_data: dict[str, str]):
+def test_get_item_line_by_id_wrong_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1"
 
     response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
@@ -121,7 +121,7 @@ def test_get_itemlines_id_wrong_api_key(_data: dict[str, str]):
     assert response.status_code == 401
 
 
-def test_get_itemlines_id_no_api_key(_data: dict[str, str]):
+def test_get_item_line_by_id_no_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1"
 
     response = requests.get(url)
@@ -130,7 +130,7 @@ def test_get_itemlines_id_no_api_key(_data: dict[str, str]):
 
 
 # GET itemlines/id/items
-def test_get_itemlines_id_items(_data: dict[str, str]):
+def test_get_item_line_items_200(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1/items"
 
     # Send a GET request to the API
@@ -143,7 +143,7 @@ def test_get_itemlines_id_items(_data: dict[str, str]):
     assert status_code == 200
 
 
-def test_get_itemlines_id_items_wrong_api_key(_data: dict[str, str]):
+def test_get_item_line_items_wrong_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1/items"
 
     response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
@@ -151,7 +151,7 @@ def test_get_itemlines_id_items_wrong_api_key(_data: dict[str, str]):
     assert response.status_code == 401
 
 
-def test_get_itemlines_id_items_no_api_key(_data: dict[str, str]):
+def test_get_item_line_items_no_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1/items"
 
     response = requests.get(url)
@@ -162,7 +162,7 @@ def test_get_itemlines_id_items_no_api_key(_data: dict[str, str]):
 # PUT
 
 
-def test_update_itemlines_id(_data: dict[str, str]):
+def test_put_item_line_200(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1"
 
     item: dict[str, str | int | float] = {
@@ -177,7 +177,7 @@ def test_update_itemlines_id(_data: dict[str, str]):
     assert response.status_code == 200
 
 
-def test_update_itemlines_id_not_found(_data: dict[str, str]):
+def test_put_item_line_not_found_404(_data: dict[str, str]):
     url = _data["url"] + "item_lines/999999"
 
     item = {"code": "ITM-TEST-004", "description": "Non Existing Item"}
@@ -187,7 +187,7 @@ def test_update_itemlines_id_not_found(_data: dict[str, str]):
     assert response.status_code == 404
 
 
-def test_update_itemlines_id_wrong_api_key(_data: dict[str, str]):
+def test_put_item_line_wrong_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1"
 
     item = {"description": "Unauthorized update"}
@@ -198,7 +198,7 @@ def test_update_itemlines_id_wrong_api_key(_data: dict[str, str]):
 
 
 # DELETE
-def test_delete_itemlines_id(_data: dict[str, str]):
+def test_delete_item_line_403(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1"
 
     response = requests.delete(url, headers={"API_KEY": _data["api_key"]})
@@ -206,7 +206,7 @@ def test_delete_itemlines_id(_data: dict[str, str]):
     assert response.status_code == 403
 
 
-def test_delete_itemlines_id_wrongapikey(_data: dict[str, str]):
+def test_delete_item_line_wrong_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_lines/1"
 
     response = requests.delete(url, headers={"API_KEY": "wrong_api_key"})
