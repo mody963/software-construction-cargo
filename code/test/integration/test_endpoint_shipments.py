@@ -19,7 +19,7 @@ NO_ACCESS_API_KEY = 'f4a5c6i7l8i9t0y1m2a3n4a5g6'
 
 #------------------------------------------------------GET------
 # status_code = response.status_code
-def test_get_shipment_200(_data: dict[str, str]) -> None:
+def test_get_shipments_200(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}shipments"
 
     response: requests.Response = requests.get(url, headers={'API_KEY': _data['api_key']})
@@ -27,7 +27,7 @@ def test_get_shipment_200(_data: dict[str, str]) -> None:
     assert response.status_code == 200
 
 
-def test_get_shipment_401(_data: dict[str, str]) -> None:
+def test_get_shipments_wrong_api_key_401(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}shipments"
 
     response: requests.Response = requests.get(url, headers={'API_KEY': 'a1b2c3d4e5'})
@@ -35,7 +35,7 @@ def test_get_shipment_401(_data: dict[str, str]) -> None:
     assert response.status_code == 401
 
 
-def test_get_shipment_404(_data: dict[str, str]) -> None:
+def test_get_shipment_not_found_404(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}shipments/9999999" # shipment die niet bestaat
 
     response: requests.Response = requests.get(url, headers={'API_KEY': _data['api_key']})
@@ -99,7 +99,7 @@ def test_post_shipment_201(_data: dict[str, str]) -> None:
     assert response.status_code == 201
 
 
-def test_post_and_get_shipment_200(_data: dict[str, str]) -> None:
+def test_post_and_get_shipment_201(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}shipments"
     json_body: dict[str, Any] = {
         "id": 999002,
@@ -126,7 +126,7 @@ def test_post_and_get_shipment_200(_data: dict[str, str]) -> None:
     assert get_response.json()["shipment_status"] == "Pending"
 
 
-def test_post_shipment_403(_data: dict[str, str]) -> None:
+def test_post_shipment_wrong_key_403(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}shipments"
     json_body: dict[str, Any] = {
         "id": 999099,
@@ -184,7 +184,7 @@ def test_put_and_get_shipment_200(_data: dict[str, str]) -> None:
     assert get_response.json()["carrier_name"] == "DHL"
 
 
-def test_put_shipment_403(_data: dict[str, str]) -> None:
+def test_put_shipment_wrong_key_403(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}shipments/1"
     json_body: dict[str, Any] = {
         "id": 1,
@@ -198,7 +198,7 @@ def test_put_shipment_403(_data: dict[str, str]) -> None:
 
 #-----------------------------------------------------------------------------DELETE---------------------
 
-def test_delete_shipment_403(_data: dict[str, str]) -> None:
+def test_delete_shipment_wrong_key_403(_data: dict[str, str]) -> None:
     # geen enkele api key in user.json heeft delete=True voor shipments, dus dit hoort
     # met elke geldige key altijd een 403 te geven, ook met de "hoofd" key van dit bestand.
     url: str = f"http://{_data['host']}{_data['api_path']}shipments/1"
