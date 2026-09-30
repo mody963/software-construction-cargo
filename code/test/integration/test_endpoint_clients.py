@@ -17,7 +17,7 @@ NO_ACCESS_API_KEY = 'r2e4c6e8i0v3i5n7g9s'
 
 # -------------------------------------------------------GET--------------------------------------------------------------------------------------------------
 
-def test_get_client_200(_data: dict[str,str]):
+def test_get_clients_200(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}clients"
 
     # Send a GET request to the API
@@ -30,7 +30,7 @@ def test_get_client_200(_data: dict[str,str]):
     assert status_code == 200
 
 
-def test_get_client_401(_data: dict[str, str]) -> None:
+def test_get_clients_wrong_api_key_401(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}clients"
 
     # Send a GET request to the API with an incorrect API key
@@ -45,7 +45,7 @@ def test_get_client_401(_data: dict[str, str]) -> None:
     assert status_code == 401
 
 
-def test_get_client_404(_data: dict[str, str]) -> None:
+def test_get_client_not_found_404(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}clients/999999" # Ik vraag een client op die niet bestaat.
 
     response: requests.Response = requests.get(
@@ -61,7 +61,7 @@ def test_get_client_404(_data: dict[str, str]) -> None:
     # het zoekt dus nogsteeds naar de client maar geeft gewoon geen juiste waardes terug mee. 
 
 
-def test_get_client_405(_data: dict[str, str]) -> None:
+def test_delete_clients_collection_not_allowed_405(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}clients"
 
     response: requests.Response = requests.delete(
@@ -113,7 +113,7 @@ def test_post_client_201(_data: dict[str, str]) -> None:
     assert response.status_code == 201
 
 
-def test_post_and_get_client_200(_data: dict[str, str]) -> None:
+def test_post_and_get_client_201(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}clients"
     json_body: dict[str, Any] = {
         "id": 999002,
@@ -138,7 +138,7 @@ def test_post_and_get_client_200(_data: dict[str, str]) -> None:
     assert get_response.json()["city"] == "Rotterdam"
 
 
-def test_post_client_403(_data: dict[str, str]) -> None:
+def test_post_client_wrong_key_403(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}clients"
     json_body: dict[str, Any] = {
         "id": 999099,
@@ -204,7 +204,7 @@ def test_put_and_get_client_200(_data: dict[str, str]) -> None:
     assert get_response.json()["address"] == "Aangepaste Straat 123"
 
 
-def test_put_client_403(_data: dict[str, str]) -> None:
+def test_put_client_wrong_key_403(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}clients/1"
     json_body: dict[str, Any] = {
         "id": 1,
@@ -269,7 +269,7 @@ def test_delete_and_get_client_404(_data: dict[str, str]) -> None:
     # in plaats van een 404, omdat er geen None-check zit na het weghalen van de client.
 
 
-def test_delete_client_403(_data: dict[str, str]) -> None:
+def test_delete_client_wrong_key_403(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}clients/1"
 
     response: requests.Response = requests.delete(url, headers={'API_KEY': NO_ACCESS_API_KEY})
