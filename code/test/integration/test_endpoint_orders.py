@@ -34,8 +34,32 @@ def test_get_orders_wrong_api_key_401(_data: dict[str, str]) -> None:
     assert response.status_code == 401
 
 
-def test_get_order_not_found_404(_data: dict[str, str]) -> None:
+def test_get_orderinvalid_id_int_not_found_404(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}orders/9999999" # order die niet bestaat
+
+    response: requests.Response = requests.get(url, headers={'API_KEY': _data['api_key']})
+    print(response.status_code)
+    print(response.text)
+
+    assert response.status_code == 404
+
+    # zelfde soort bug als bij clients: dit endpoint geeft momenteel 200 + null terug
+    # in plaats van 404, ook al bestaat de ord niet.
+
+def test_get_order_invalid_id_string_not_found_404(_data: dict[str, str]) -> None:
+    url: str = f"http://{_data['host']}{_data['api_path']}orders/AAAAAAA" # order die niet bestaat
+
+    response: requests.Response = requests.get(url, headers={'API_KEY': _data['api_key']})
+    print(response.status_code)
+    print(response.text)
+
+    assert response.status_code == 404
+
+    # zelfde soort bug als bij clients: dit endpoint geeft momenteel 200 + null terug
+    # in plaats van 404, ook al bestaat de ord niet.
+
+def test_get_order_invalid_id_string_integer_non_alphanumeric_not_found_404(_data: dict[str, str]) -> None:
+    url: str = f"http://{_data['host']}{_data['api_path']}orders/ABC6d1Xyz$" # order die niet bestaat
 
     response: requests.Response = requests.get(url, headers={'API_KEY': _data['api_key']})
     print(response.status_code)
