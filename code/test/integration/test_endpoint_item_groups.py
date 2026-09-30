@@ -12,7 +12,7 @@ def _data():
     }
 
 
-def test_get_itemgroup(_data: dict[str, str]):
+def test_get_item_groups_200(_data: dict[str, str]):
     url = _data["url"] + "item_groups"
 
     # Send a GET request to the API
@@ -25,7 +25,7 @@ def test_get_itemgroup(_data: dict[str, str]):
     assert status_code == 200
 
 
-def test_get_itemgroups_wrong_api_key(_data: dict[str, str]):
+def test_get_item_groups_wrong_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_groups"
 
     response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
@@ -33,8 +33,38 @@ def test_get_itemgroups_wrong_api_key(_data: dict[str, str]):
     assert response.status_code == 401
 
 
-def test_get_itemgroups_no_api_key(_data: dict[str, str]):
+def test_get_item_groups_no_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_groups"
+
+    response = requests.get(url)
+
+    assert response.status_code == 401
+
+
+# /item_groups/{id}
+def test_get_item_group_by_id_200(_data: dict[str, str]):
+    url = _data["url"] + "item_groups/2"
+
+    # Send a GET request to the API
+    response = requests.get(url, headers={"API_KEY": _data["api_key"]})
+
+    # Get the status code and response data
+    status_code = response.status_code
+
+    # Verify that the status code is 200 (OK)
+    assert status_code == 200
+
+
+def test_get_item_group_by_id_wrong_api_key_401(_data: dict[str, str]):
+    url = _data["url"] + "item_groups/2"
+
+    response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
+
+    assert response.status_code == 401
+
+
+def test_get_item_group_by_id_no_api_key_401(_data: dict[str, str]):
+    url = _data["url"] + "item_groups/2"
 
     response = requests.get(url)
 
@@ -44,7 +74,7 @@ def test_get_itemgroups_no_api_key(_data: dict[str, str]):
 # POST
 
 
-def test_create_itemgroups(_data: dict[str, str]):
+def test_post_item_group_201(_data: dict[str, str]):
     url = _data["url"] + "item_groups"
 
     item: dict[str, str | int | float] = {
@@ -60,7 +90,7 @@ def test_create_itemgroups(_data: dict[str, str]):
     assert response.status_code == 201
 
 
-def test_create_incomplete_itemgroups(_data: dict[str, str]):
+def test_post_item_group_incomplete_400(_data: dict[str, str]):
     url = _data["url"] + "item_groups"
 
     item = {
@@ -72,7 +102,7 @@ def test_create_incomplete_itemgroups(_data: dict[str, str]):
     assert response.status_code == 400
 
 
-def test_create_incorrecte_itemgroups_types(_data: dict[str, str]):
+def test_post_item_group_incorrect_types_400(_data: dict[str, str]):
     url = _data["url"] + "item_groups"
 
     item: dict[str, str | int | float] = {
@@ -88,7 +118,7 @@ def test_create_incorrecte_itemgroups_types(_data: dict[str, str]):
     assert response.status_code == 400
 
 
-def test_create_empty_itemgroups(_data: dict[str, str]):
+def test_post_item_group_empty_400(_data: dict[str, str]):
     url = _data["url"] + "item_groups"
     item: dict[str, str | int | float] = {}
 
@@ -97,41 +127,10 @@ def test_create_empty_itemgroups(_data: dict[str, str]):
     assert response.status_code == 400
 
 
-# /item_groups/{id}
-# GET
-def test_get_itemgroups_id(_data: dict[str, str]):
-    url = _data["url"] + "item_groups/2"
-
-    # Send a GET request to the API
-    response = requests.get(url, headers={"API_KEY": _data["api_key"]})
-
-    # Get the status code and response data
-    status_code = response.status_code
-
-    # Verify that the status code is 200 (OK)
-    assert status_code == 200
-
-
-def test_get_itemgroups_id_wrong_api_key(_data: dict[str, str]):
-    url = _data["url"] + "item_groups/2"
-
-    response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
-
-    assert response.status_code == 401
-
-
-def test_get_itemgroups_id_no_api_key(_data: dict[str, str]):
-    url = _data["url"] + "item_groups/2"
-
-    response = requests.get(url)
-
-    assert response.status_code == 401
-
-
 # PUT
 
 
-def test_update_itemgroups_id(_data: dict[str, str]):
+def test_put_item_group_200(_data: dict[str, str]):
     url = _data["url"] + "item_groups/2"
 
     item: dict[str, str | int | float] = {
@@ -146,7 +145,7 @@ def test_update_itemgroups_id(_data: dict[str, str]):
     assert response.status_code == 200
 
 
-def test_update_itemgroups_id_not_found(_data: dict[str, str]):
+def test_put_item_group_not_found_404(_data: dict[str, str]):
     url = _data["url"] + "item_groups/999999"
 
     item = {"code": "ITM-TEST-004", "description": "Non Existing Item"}
@@ -156,7 +155,7 @@ def test_update_itemgroups_id_not_found(_data: dict[str, str]):
     assert response.status_code == 404
 
 
-def test_update_itemgroups_id_wrong_api_key(_data: dict[str, str]):
+def test_put_item_group_wrong_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_groups/1"
 
     item = {"description": "Niet houdtbaar"}
@@ -167,7 +166,7 @@ def test_update_itemgroups_id_wrong_api_key(_data: dict[str, str]):
 
 
 # DELETE
-def test_delete_itemgroups_id(_data: dict[str, str]):
+def test_delete_item_group_403(_data: dict[str, str]):
     url = _data["url"] + "item_groups/1"
 
     response = requests.delete(url, headers={"API_KEY": _data["api_key"]})
@@ -175,7 +174,7 @@ def test_delete_itemgroups_id(_data: dict[str, str]):
     assert response.status_code == 403
 
 
-def test_delete_itemgroups_id_wrongapikey(_data: dict[str, str]):
+def test_delete_item_group_wrong_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_groups/1"
 
     response = requests.delete(url, headers={"API_KEY": "wrong_api_key"})
@@ -183,7 +182,7 @@ def test_delete_itemgroups_id_wrongapikey(_data: dict[str, str]):
     assert response.status_code == 401
 
 
-def test_delete_itemgroups_id_wrong_id(_data: dict[str, str]):
+def test_delete_item_group_wrong_id_401(_data: dict[str, str]):
     url = _data["url"] + "item_groups/20000"
 
     response = requests.delete(url, headers={"API_KEY": "wrong_api_key"})
