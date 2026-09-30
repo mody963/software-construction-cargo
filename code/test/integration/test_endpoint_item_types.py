@@ -15,7 +15,7 @@ def _data():
 # GET
 
 # item_types
-def test_get_itemtypes(_data: dict[str, str]):
+def test_get_item_types_200(_data: dict[str, str]):
     url = _data["url"] + "item_types"
 
     # Send a GET request to the API
@@ -28,7 +28,7 @@ def test_get_itemtypes(_data: dict[str, str]):
     assert status_code == 200
 
 
-def test_get_itemtypes_wrong_api_key(_data: dict[str, str]):
+def test_get_item_types_wrong_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_types"
 
     response = requests.get(url, headers={"API_KEY": "verkeerde-api-key"})
@@ -36,7 +36,7 @@ def test_get_itemtypes_wrong_api_key(_data: dict[str, str]):
     assert response.status_code == 401
 
 
-def test_get_itemtypes_no_api_key(_data: dict[str, str]):
+def test_get_item_types_no_api_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_types"
 
     response = requests.get(url)
@@ -45,7 +45,7 @@ def test_get_itemtypes_no_api_key(_data: dict[str, str]):
 
 
 # item/{id}
-def test_get_itemtypes_by_id(_data: dict[str, str]):
+def test_get_item_type_by_id_200(_data: dict[str, str]):
     url = _data["url"] + "item_types/1"
 
     response = requests.get(url, headers={"API_KEY": _data["api_key"]})
@@ -54,7 +54,7 @@ def test_get_itemtypes_by_id(_data: dict[str, str]):
 
 
 # non exsistent id
-def test_get_itemtypes_not_found(_data: dict[str, str]):
+def test_get_item_type_not_found_404(_data: dict[str, str]):
     url = _data["url"] + "item_types/9999999999"
 
     response = requests.get(url, headers={"API_KEY": _data["api_key"]})
@@ -63,7 +63,7 @@ def test_get_itemtypes_not_found(_data: dict[str, str]):
 
 
 # geen int gebruikt maar letters.
-def test_get_itemtypes_invalid_id(_data: dict[str, str]):
+def test_get_item_type_invalid_id_400(_data: dict[str, str]):
     url = _data["url"] + "item_types/abc"
 
     response = requests.get(url, headers={"API_KEY": _data["api_key"]})
@@ -72,7 +72,7 @@ def test_get_itemtypes_invalid_id(_data: dict[str, str]):
 
 
 # api key mag niet deleten
-def test_delete_itemtypes_not_allowed(_data: dict[str, str]):
+def test_delete_item_types_collection_not_allowed_405(_data: dict[str, str]):
     url = _data["url"] + "item_types"
 
     response = requests.delete(url, headers={"API_KEY": "r2e4c6e8i0v3i5n7g9s"})
@@ -83,7 +83,7 @@ def test_delete_itemtypes_not_allowed(_data: dict[str, str]):
 # POST
 
 
-def test_create_itemtypes(_data: dict[str, str]):
+def test_post_item_type_201(_data: dict[str, str]):
     url = _data["url"] + "item_types"
 
     item: dict[str, str | int | float] = {
@@ -98,7 +98,7 @@ def test_create_itemtypes(_data: dict[str, str]):
     assert response.status_code == 201
 
 
-def test_create_incomplete_itemtypes(_data: dict[str, str]):
+def test_post_item_type_incomplete_400(_data: dict[str, str]):
     url = _data["url"] + "item_types"
 
     item = {
@@ -113,7 +113,7 @@ def test_create_incomplete_itemtypes(_data: dict[str, str]):
 
 
 # Verkeerde types, strings waar int's en int's waar strings
-def test_create_incorrecte_itemtypes(_data: dict[str, str]):
+def test_post_item_type_incorrect_types_400(_data: dict[str, str]):
     url = _data["url"] + "item_types"
 
     item: dict[str, str | int | float] = {
@@ -131,7 +131,7 @@ def test_create_incorrecte_itemtypes(_data: dict[str, str]):
 # PUT
 
 
-def test_update_itemtypes(_data: dict[str, str]):
+def test_put_item_type_200(_data: dict[str, str]):
     url = _data["url"] + "item_types/1"
 
     item: dict[str, str | int | float] = {
@@ -146,7 +146,7 @@ def test_update_itemtypes(_data: dict[str, str]):
     assert response.status_code == 200
 
 
-def test_update_itemtypes_not_found(_data: dict[str, str]):
+def test_put_item_type_not_found_404(_data: dict[str, str]):
     url = _data["url"] + "item_types/999999"
 
     item = {"code": "ITM-TEST-004", "description": "Non Existing Item"}
@@ -157,7 +157,7 @@ def test_update_itemtypes_not_found(_data: dict[str, str]):
     assert response.status_code == 404
 
 
-def test_update_itemtypes_wrong_api_key(_data: dict[str, str]):
+def test_put_item_type_wrong_key_401(_data: dict[str, str]):
     url = _data["url"] + "item_types/1"
 
     item = {"description": "Unauthorized update"}
