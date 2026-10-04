@@ -1,0 +1,112 @@
+================
+TEST_ENDPOINT_WAREHOUSES.PY
+================
+test_get_warehouse_invalid_id_integer_not_found_404
+Verwacht: 404
+Voorspeld (nu): 200 (+ null body)
+Klopt: NEE
+Reden: `get_warehouse()` geeft `None` terug bij een onbekend id, maar dit wordt zonder check met status 200 teruggestuurd.
+
+test_get_warehouse_invalid_id_string_404
+Verwacht: 404
+Voorspeld (nu): 500
+Klopt: NEE
+Reden: De router probeert `int(paths[1])` uit te voeren op een string (bijv. "abcdef"). Dit levert een `ValueError` op die niet in een try-except blok wordt opgevangen, waardoor de server crasht met een 500.
+
+test_get_warehouse_invalid_id_string_integer_non_alphanumeric_not_found_404
+Verwacht: 404
+Voorspeld (nu): 500
+Klopt: NEE
+Reden: Zelfde bug als hierboven; de `ValueError` bij het parsen van "ABC6d1Xyz$" naar een integer crasht de server (500).
+
+test_delete_warehouses_collection_not_allowed_405
+Verwacht: 405
+Voorspeld (nu): 500
+Klopt: NEE
+Reden: DELETE op `/warehouses` zonder id zorgt ervoor dat `handle_delete_version_1` direct `int(paths[1])` probeert uit te lezen. Omdat `paths[1]` niet bestaat, resulteert dit in een `IndexError` die door een algemeen except-blok wordt gevangen als een 500.
+
+test_delete_and_get_warehouse_404
+Verwacht: 201 (POST) -> 200 (DELETE) -> 404 (GET)
+Voorspeld (nu): 201 -> 200 -> 200 (+ null body)
+Klopt: NEE (laatste stap)
+Reden: Zelfde oorzaak als de standaard 404-fout. Na het succesvol verwijderen (200), levert de daaropvolgende GET-request een `None` op vanuit de pool, wat ongecontroleerd als een 200 wordt geretourneerd.
+
+===========================
+TEST_ENDPOINT_LOCATIONS.PY
+===========================
+test_get_location_invalid_id_integer_not_found_404
+Verwacht: 404
+Voorspeld (nu): 200 (+ null body)
+Klopt: NEE
+Reden: `get_location()` retourneert `None` bij een onbekend ID, maar de `GET`-handler controleert dit niet en stuurt direct een `200 OK` met de lege body terug.
+
+test_get_location_invalid_id_string_404
+Verwacht: 404
+Voorspeld (nu): 500
+Klopt: NEE
+Reden: De server probeert `int(paths[1])` te gebruiken om het ID "abcdef" om te zetten. Omdat dit niet in een `try-except` blok zit, resulteert dit in een `ValueError` en crasht de handler (500).
+
+test_get_location_invalid_id_string_integer_non_alphanumeric_not_found_404
+Verwacht: 404
+Voorspeld (nu): 500
+Klopt: NEE
+Reden: Zelfde probleem als hierboven; de `ValueError` bij het omzetten van "ABC6d1Xyz$" naar een integer crasht de server en levert een 500 op in plaats van 404 of 400.
+
+test_delete_locations_collection_not_allowed_405
+Verwacht: 405
+Voorspeld (nu): 500
+Klopt: NEE
+Reden: Een `DELETE` verzoek op `/locations` (zonder ID) zorgt ervoor dat de handler `int(paths[1])` probeert uit te voeren. Omdat er geen tweede segment in de URL zit, ontstaat er een `IndexError` die de server doet crashen (500).
+
+===========================
+TEST_ENDPOINT_TRANSFERS.PY
+===========================
+
+test_get_transfer_invalid_id_integer_not_found_404
+Verwacht: 404
+Voorspeld (nu): 200 (+ null body)
+Klopt: NEE
+Reden: get_transfer() retourneert None bij een onbekend ID (zoals 9999999). De GET-handler in de code controleert dit resultaat niet en stuurt standaard een 200 OK terug.
+
+test_get_transfer_invalid_id_string_404
+Verwacht: 404
+Voorspeld (nu): 500
+Klopt: NEE
+Reden: Bij het opvragen van het ID "AAAAAAAAAAA" probeert de server dit via int(paths[1]) om te zetten naar een integer. Dit veroorzaakt een ValueError die niet wordt afgevangen, wat resulteert in een servercrash (500).
+
+test_get_transfer_invalid_id_string_integer_non_alphanumeric_not_found_404
+Verwacht: 404
+Voorspeld (nu): 500
+Klopt: NEE
+Reden: Zelfde probleem als hierboven; de ValueError bij het omzetten van "ABC6d1Xyz$" naar een integer levert een 500 op.
+
+test_post_and_get_transfer_201
+Verwacht: transfer_status = "Pending"
+Voorspeld (nu): "Scheduled"
+Klopt: NEE
+Reden: Bij het aanmaken (POST) van een transfer wordt de meegestuurde transfer_status "Pending" in de backend blijkbaar overschreven of genegeerd (vermoedelijk hardcoded op "Scheduled" in de datalaag of router). Hierdoor falen latere asserts op de GET-response.
+
+test_delete_transfers_collection_not_allowed_405
+Verwacht: 405
+Voorspeld (nu): 403
+Klopt: NEE
+Reden: Een DELETE verzoek op de volledige /transfers collectie wordt afgevangen door de Role-Based Access Control (RBAC). De gebruikte API key heeft helemaal geen DELETE-rechten, waardoor de server direct een 403 Forbidden geeft, nog voordat het de methode-validatie (405) bereikt.
+
+
+===========================
+SAMENVATTING - TESTS DIE FALEN
+===========================
+
+1. test_get_..._invalid_id_integer_not_found_404 -> krijgt 200 i.p.v. 404
+2. test_get_..._invalid_id_string_404 -> krijgt 500 i.p.v. 400 of 404
+3. test_delete_and_get_warehouse_404 -> krijgt 200 i.p.v. 404 (bij de laatste GET)
+4. test_delete_..._collection_not_allowed_405 -> krijgt 500 (bij warehouses/locations) of 403 (bij transfers) i.p.v. 405
+5. test_post_..._incomplete_400 -> krijgt 500 i.p.v. 400
+6. test_post_and_get_transfer_201 -> assert faalt (krijgt 'Scheduled' i.p.v. 'Pending')
+
+Onderliggende oorzaken (4x):
+
+* Geen None-check bij GET: De GET-by-id handlers checken niet of het resultaat `None` is voordat ze status 200 + de (lege) body terugsturen. Dit veroorzaakt zowel de standaard 404-fouten als de fout bij het opvragen van een zojuist verwijderd object.
+* Geen Error Handling op paden: De URL path parsing bevat geen `try-except` voor `ValueError` exceptions. Het direct parsen van strings naar integers (`int(paths[1])`) crasht de server met een 500.
+* Geen validatie op padlengte: Handlers checken de padlengte (`len(paths)`) niet goed bij collectie-mutaties. Hierdoor levert `int(paths[1])` een `IndexError` op (500), tenzij de RBAC-rechten (zoals bij transfers) de call al eerder afkappen met een 403.
+* Overschrijven van geldige payload-data: Bij het aanmaken van transfers overschrijft of negeert de datalaag of router legitieme input-data (zoals `transfer_status`) en forceert een hardcoded default waarde.
