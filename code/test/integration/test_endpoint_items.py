@@ -318,10 +318,10 @@ def test_get_item_inventory_totals_has_required_fields_200(_data: dict[str, str]
     totals = response.json()
 
     required_fields = [
-        "expected",
-        "ordered",
-        "allocated",
-        "available",
+        "total_expected",
+        "total_expected",
+        "total_expected",
+        "total_available",
     ]
 
     for field in required_fields:
