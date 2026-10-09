@@ -8,7 +8,7 @@ from providers import data_provider
 from processors import notification_processor
 
 class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
-
+    
     def handle_get_version_1(self, paths, user):
         if not auth_provider.has_access(user, paths, "get"):
             self.send_response(403)
