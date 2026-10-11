@@ -438,7 +438,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
 
 
-    def send_response_code(self, data: list[dict[str, object]], status_code: int = 200) -> None:
+    def send_response_code(self, data, status_code: int = 200) -> None:
         self.send_response(status_code)
         self.send_header("Content-type", "application/json")
         self.end_headers()
@@ -600,7 +600,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                     case 3:
                         if paths[2] == "items":
                             items = data_provider.fetch_item_pool().get_items_for_supplier(id)
-                            self.send_response_code(supplier_id)
+                            self.send_response_code(id)
                         else:
                             self.send_response(404)
                             self.end_headers() 
