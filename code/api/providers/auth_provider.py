@@ -11,7 +11,7 @@ def _load_users():
     with open(ROOT_PATH + "user.json", "r") as f:
         return json.load(f)
 
-def get_user(api_key: str):
+def get_user(api_key):
     users = _load_users()
     for user in users:
         if user["api_key"] == api_key:

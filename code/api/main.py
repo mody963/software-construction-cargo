@@ -80,6 +80,70 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data).encode("utf-8"))
 
+# alle losse functions die er zijn om zo de elif  evt weg te kunne halen. 
+    GET_FUNCTIONS = [
+    # warehouses
+    "get_warehouses",
+    "get_warehouse",
+    "get_locations_in_warehouse",
+
+    # locations
+    "get_locations",
+    "get_location",
+
+    # transfers
+    "get_transfers",
+    "get_transfer",
+    "get_items_in_transfer",
+
+    # items
+    "get_items",
+    "get_item",
+    "get_inventories_for_item",
+    "get_inventory_totals_for_item",
+
+    # item_lines
+    "get_item_lines",
+    "get_item_line",
+    "get_items_for_item_line",
+
+    # item_groups
+    "get_item_groups",
+    "get_item_group",
+    "get_items_for_item_group",
+
+    # item_types
+    "get_item_types",
+    "get_item_type",
+    "get_items_for_item_type",
+
+    # inventories
+    "get_inventories",
+
+    # suppliers
+    "get_suppliers",
+    "get_supplier",
+    "get_items_for_supplier",
+
+    # orders
+    "get_orders",
+    "get_order",
+    "get_items_in_order",
+
+    # clients
+    "get_clients",
+    "get_client",
+    "get_orders_for_client",
+
+    # shipments
+    "get_shipments",
+    "get_shipment",
+    "get_order_ids_in_shipment",
+    "get_items_in_shipment",
+    ]
+
+
+
     def handle_get_version_1(self, paths: list[str], user: str |None):
         parts= len(paths)
 
