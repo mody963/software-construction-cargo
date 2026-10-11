@@ -11,24 +11,30 @@ from processors import notification_processor
 from enum import Enum
 
 
-class AllResources(str, Enum):
-    """All resources that we have into one plaace"""
-    # Resources
-    WAREHOUSES = "warehouses"
-    LOCATIONS = "locations"
-    TRANSFERS = "transfers"
-    ITEMS = "items"
-    ITEM_LINES = "item_lines"
-    ITEM_GROUPS = "item_groups"
-    ITEM_TYPES = "item_types"
-    INVENTORIES = "inventories"
-    SUPPLIERS = "suppliers"
-    ORDERS = "orders"
-    CLIENTS = "clients"
-    SHIPMENTS = "shipments"
+class AllResources(Enum):
+    """All resources and their maximum path lengths."""
+
+    # Main resources
+    WAREHOUSES = ("warehouses", 3)
+    LOCATIONS = ("locations", 2)
+    TRANSFERS = ("transfers", 3)
+    ITEMS = ("items", 4)
+    ITEM_LINES = ("item_lines", 3)
+    ITEM_GROUPS = ("item_groups", 3)
+    ITEM_TYPES = ("item_types", 3)
+    INVENTORIES = ("inventories", 2)
+    SUPPLIERS = ("suppliers", 3)
+    ORDERS = ("orders", 3)
+    CLIENTS = ("clients", 3)
+    SHIPMENTS = ("shipments", 3)
+
     # Sub-resources
-    INVENTORY = "inventory"
-    TOTALS = "totals"
+    INVENTORY = ("inventory", 1)
+    TOTALS = ("totals", 1)
+
+    def __init__(self, path: str, max_path_length: int):
+        self.path = path
+        self.max_path_length = max_path_length
 
 
 
@@ -443,8 +449,17 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
+
         else:
             parts= len(paths)
+
+            # losse kijk of de case groter is dan de algemene lengte die het kan hebben mbv de enum
+            resource = next((resource for resource in AllResources if resource.path == paths[0]),None)
+            if resource is None or parts > resource.max_path_length:
+                self.send_response(404)
+                self.end_headers()
+                return
+
             if paths[0] == AllResources.WAREHOUSES.value:
                 match parts:
                     case 1:
@@ -459,86 +474,53 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == "locations":
                             warehouse_id = int(paths[1])
                             locations = data_provider.fetch_location_pool().get_locations_in_warehouse(warehouse_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(locations).encode("utf-8"))
+                            self.send_response_code(locations)
                         else:
                             self.send_response(404)
                             self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers()
+
             elif paths[0] == AllResources.LOCATIONS.value:
                 match parts:
                     case 1:
                         locations = data_provider.fetch_location_pool().get_locations()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(locations).encode("utf-8"))
+                        self.send_response_code(locations)
                     case 2:
                         location_id = int(paths[1])
                         location = data_provider.fetch_location_pool().get_location(location_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(location).encode("utf-8"))
-                    case _:
-                        self.send_response(404)
-                        self.end_headers()
+                        self.send_response_code(location)
+
             elif paths[0] == AllResources.TRANSFERS.value:
                 match parts:
                     case 1:
                         transfers = data_provider.fetch_transfer_pool().get_transfers()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(transfers).encode("utf-8"))
+                        self.send_response_code(transfers)
                     case 2:
                         transfer_id = int(paths[1])
                         transfer = data_provider.fetch_transfer_pool().get_transfer(transfer_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(transfer).encode("utf-8"))
+                        self.send_response_code(transfer)
                     case 3:
                         if paths[2] == "items":
                             transfer_id = int(paths[1])
                             items = data_provider.fetch_transfer_pool().get_items_in_transfer(transfer_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(items).encode("utf-8"))
+                            self.send_response_code(items)
                         else:
                             self.send_response(404)
                             self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers()
+                    
             elif paths[0] == AllResources.ITEMS.value:
                 match parts:
                     case 1:
                         items = data_provider.fetch_item_pool().get_items()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(items).encode("utf-8"))
+                        self.send_response_code(items)
                     case 2:
                         item_id = int(paths[1])
                         item = data_provider.fetch_item_pool().get_item(item_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(item).encode("utf-8"))
+                        self.send_response_code(item)
                     case 3:
                         if paths[2] == "inventory":
                             item_id = int(paths[1])
                             inventories = data_provider.fetch_inventory_pool().get_inventories_for_item(item_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(inventories).encode("utf-8"))
+                            self.send_response_code(inventories)
                         else:
                             self.send_response(404)
                             self.end_headers()
@@ -546,242 +528,153 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == "inventory" and paths[3] == "totals":
                             item_id = int(paths[1])
                             totals = data_provider.fetch_inventory_pool().get_inventory_totals_for_item(item_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(totals).encode("utf-8"))
+                            self.send_response_code(totals)
                         else:
                             self.send_response(404)
                             self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers()
+
             elif paths[0] == AllResources.ITEM_LINES.value:
                 match parts:
                     case 1:
                         item_lines = data_provider.fetch_item_line_pool().get_item_lines()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(item_lines).encode("utf-8"))
+                        self.send_response_code(item_lines)
                     case 2:
                         item_line_id = int(paths[1])
                         item_line = data_provider.fetch_item_line_pool().get_item_line(item_line_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(item_line).encode("utf-8"))
+                        self.send_response_code(item_line)
                     case 3:
                         if paths[2] == "items":
                             item_line_id = int(paths[1])
                             items = data_provider.fetch_item_pool().get_items_for_item_line(item_line_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(items).encode("utf-8"))
+                            self.send_response_code(items)
                         else:
                             self.send_response(404)
                             self.end_headers()
-                    case _:
                         self.send_response(404)
                         self.end_headers()
+
             elif paths[0] == AllResources.ITEM_GROUPS.value:
                 match parts:
                     case 1:
                         item_groups = data_provider.fetch_item_group_pool().get_item_groups()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(item_groups).encode("utf-8"))
+                        self.send_response_code(item_groups)
                     case 2:
                         item_group_id = int(paths[1])
                         item_group = data_provider.fetch_item_group_pool().get_item_group(item_group_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(item_group).encode("utf-8"))
+                        self.send_response_code(item_group)
                     case 3:
                         if paths[2] == "items":
                             item_group_id = int(paths[1])
                             items = data_provider.fetch_item_pool().get_items_for_item_group(item_group_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(items).encode("utf-8"))
+                            self.send_response_code(items)
                         else:
                             self.send_response(404)
                             self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers()
+
             elif paths[0] == AllResources.ITEM_TYPES.value:
                 match parts:
                     case 1:
                         item_types = data_provider.fetch_item_type_pool().get_item_types()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(item_types).encode("utf-8"))
+                        self.send_response_code(item_types)
                     case 2:
                         item_type_id = int(paths[1])
                         item_type = data_provider.fetch_item_type_pool().get_item_type(item_type_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(item_type).encode("utf-8"))
+                        self.send_response_code(item_type)
                     case 3:
                         if paths[2] == "items":
                             item_type_id = int(paths[1])
                             items = data_provider.fetch_item_pool().get_items_for_item_type(item_type_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(items).encode("utf-8"))
+                            self.send_response_code(items)
                         else:
                             self.send_response(404)
                             self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers()
+
             elif paths[0] == AllResources.INVENTORIES.value:
                 match parts:
                     case 1:
                         inventories = data_provider.fetch_inventory_pool().get_inventories()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(inventories).encode("utf-8"))
+                        self.send_response_code(inventories)
                     case 2:
                         # Inventory rows are keyed on a composite (item_id, location_id)
                         # in the new schema, so a single surrogate id has no meaning.
                         self.send_response(404)
                         self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers()
+
             elif paths[0] == AllResources.SUPPLIERS.value:
                 match parts:
                     case 1:
                         suppliers = data_provider.fetch_supplier_pool().get_suppliers()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(suppliers).encode("utf-8"))
+                        self.send_response_code(suppliers)
                     case 2:
                         supplier_id = int(paths[1])
                         supplier = data_provider.fetch_supplier_pool().get_supplier(supplier_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(supplier).encode("utf-8"))
+                        self.send_response_code(supplier)
                     case 3:
                         if paths[2] == "items":
                             supplier_id = int(paths[1])
                             items = data_provider.fetch_item_pool().get_items_for_supplier(supplier_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(items).encode("utf-8"))
+                            self.send_response_code(supplier_id)
                         else:
                             self.send_response(404)
-                            self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers() 
+                            self.end_headers() 
+
             elif paths[0] == AllResources.ORDERS.value:
                 match parts:
                     case 1:
                         orders = data_provider.fetch_order_pool().get_orders()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(orders).encode("utf-8"))
+                        self.send_response_code(orders)
                     case 2:
                         order_id = int(paths[1])
                         order = data_provider.fetch_order_pool().get_order(order_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(order).encode("utf-8"))
+                        self.send_response_code(order)
                     case 3:
                         if paths[2] == "items":
                             order_id = int(paths[1])
                             items = data_provider.fetch_order_pool().get_items_in_order(order_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(items).encode("utf-8"))
+                            self.send_response_code(items)
                         else:
                             self.send_response(404)
                             self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers()
+
             elif paths[0] == AllResources.CLIENTS.value:
                 match parts:
                     case 1:
                         clients = data_provider.fetch_client_pool().get_clients()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(clients).encode("utf-8"))
+                        self.send_response_code(clients)
                     case 2:
                         client_id = int(paths[1])
                         client = data_provider.fetch_client_pool().get_client(client_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(client).encode("utf-8"))     
+                        self.send_response_code(client)     
                     case 3:
                         if paths[2] == "orders":
                             client_id = int(paths[1])
                             orders = data_provider.fetch_order_pool().get_orders_for_client(client_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(orders).encode("utf-8"))
+                            self.send_response_code(orders)
                         else:
                             self.send_response(404)
                             self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers() 
+
             elif paths[0] == AllResources.SHIPMENTS.value:
                 match parts:
                     case 1:
                         shipments = data_provider.fetch_shipment_pool().get_shipments()
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(shipments).encode("utf-8"))
+                        self.send_response_code(shipments)
                     case 2:
                         shipment_id = int(paths[1])
                         shipment = data_provider.fetch_shipment_pool().get_shipment(shipment_id)
-                        self.send_response(200)
-                        self.send_header("Content-type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(shipment).encode("utf-8"))
+                        self.send_response_code(shipment)
                     case 3:
                         if paths[2] == "orders":
                             shipment_id = int(paths[1])
                             orders = data_provider.fetch_shipment_pool().get_order_ids_in_shipment(shipment_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(orders).encode("utf-8"))
+                            self.send_response_code(orders)
                         elif paths[2] == "items":
                             shipment_id = int(paths[1])
                             items = data_provider.fetch_shipment_pool().get_items_in_shipment(shipment_id)
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(items).encode("utf-8"))
+                            self.send_response_code(items)
                         else:
                             self.send_response(404)
                             self.end_headers()
-                    case _:
-                        self.send_response(404)
-                        self.end_headers()
 
             
 
