@@ -460,92 +460,85 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 return
 
-            if paths[0] == AllResources.WAREHOUSES.value:
+            if parts > 1:
+                id = int(paths[1])
+
+            if paths[0] == AllResources.WAREHOUSES.path:
                 match parts:
                     case 1:
                         warehouses= data_provider.fetch_warehouse_pool().get_warehouses()
                         # uiteindelijk nog een statement maken om te kijken of het wel iets returned idd, zoniet dan andere statuscode (204
                         self.send_response_code(warehouses)
                     case 2:
-                        warehouse_id = int(paths[1])
-                        warehouse = data_provider.fetch_warehouse_pool().get_warehouse(warehouse_id)
+                        warehouse = data_provider.fetch_warehouse_pool().get_warehouse(id)
                         self.send_response_code(warehouse)
                     case 3:
                         if paths[2] == "locations":
-                            warehouse_id = int(paths[1])
-                            locations = data_provider.fetch_location_pool().get_locations_in_warehouse(warehouse_id)
+                            locations = data_provider.fetch_location_pool().get_locations_in_warehouse(id)
                             self.send_response_code(locations)
                         else:
                             self.send_response(404)
                             self.end_headers()
 
-            elif paths[0] == AllResources.LOCATIONS.value:
+            elif paths[0] == AllResources.LOCATIONS.path:
                 match parts:
                     case 1:
                         locations = data_provider.fetch_location_pool().get_locations()
                         self.send_response_code(locations)
                     case 2:
-                        location_id = int(paths[1])
-                        location = data_provider.fetch_location_pool().get_location(location_id)
+                        location = data_provider.fetch_location_pool().get_location(id)
                         self.send_response_code(location)
 
-            elif paths[0] == AllResources.TRANSFERS.value:
+            elif paths[0] == AllResources.TRANSFERS.path:
                 match parts:
                     case 1:
                         transfers = data_provider.fetch_transfer_pool().get_transfers()
                         self.send_response_code(transfers)
                     case 2:
-                        transfer_id = int(paths[1])
-                        transfer = data_provider.fetch_transfer_pool().get_transfer(transfer_id)
+                        transfer = data_provider.fetch_transfer_pool().get_transfer(id)
                         self.send_response_code(transfer)
                     case 3:
                         if paths[2] == "items":
-                            transfer_id = int(paths[1])
-                            items = data_provider.fetch_transfer_pool().get_items_in_transfer(transfer_id)
+                            items = data_provider.fetch_transfer_pool().get_items_in_transfer(id)
                             self.send_response_code(items)
                         else:
                             self.send_response(404)
                             self.end_headers()
                     
-            elif paths[0] == AllResources.ITEMS.value:
+            elif paths[0] == AllResources.ITEMS.path:
                 match parts:
                     case 1:
                         items = data_provider.fetch_item_pool().get_items()
                         self.send_response_code(items)
                     case 2:
-                        item_id = int(paths[1])
-                        item = data_provider.fetch_item_pool().get_item(item_id)
+                        item = data_provider.fetch_item_pool().get_item(id)
                         self.send_response_code(item)
                     case 3:
                         if paths[2] == "inventory":
-                            item_id = int(paths[1])
-                            inventories = data_provider.fetch_inventory_pool().get_inventories_for_item(item_id)
+                            inventories = data_provider.fetch_inventory_pool().get_inventories_for_item(id)
                             self.send_response_code(inventories)
                         else:
                             self.send_response(404)
                             self.end_headers()
                     case 4:
                         if paths[2] == "inventory" and paths[3] == "totals":
-                            item_id = int(paths[1])
-                            totals = data_provider.fetch_inventory_pool().get_inventory_totals_for_item(item_id)
+                            totals = data_provider.fetch_inventory_pool().get_inventory_totals_for_item(id)
                             self.send_response_code(totals)
                         else:
                             self.send_response(404)
                             self.end_headers()
 
-            elif paths[0] == AllResources.ITEM_LINES.value:
+            elif paths[0] == AllResources.ITEM_LINES.path:
                 match parts:
                     case 1:
                         item_lines = data_provider.fetch_item_line_pool().get_item_lines()
                         self.send_response_code(item_lines)
                     case 2:
-                        item_line_id = int(paths[1])
-                        item_line = data_provider.fetch_item_line_pool().get_item_line(item_line_id)
+                        item_line = data_provider.fetch_item_line_pool().get_item_line(id)
                         self.send_response_code(item_line)
                     case 3:
                         if paths[2] == "items":
-                            item_line_id = int(paths[1])
-                            items = data_provider.fetch_item_pool().get_items_for_item_line(item_line_id)
+                            items = data_provider.fetch_item_pool().get_items_for_item_line(id)
                             self.send_response_code(items)
                         else:
                             self.send_response(404)
@@ -553,37 +546,33 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         self.send_response(404)
                         self.end_headers()
 
-            elif paths[0] == AllResources.ITEM_GROUPS.value:
+            elif paths[0] == AllResources.ITEM_GROUPS.path:
                 match parts:
                     case 1:
                         item_groups = data_provider.fetch_item_group_pool().get_item_groups()
                         self.send_response_code(item_groups)
                     case 2:
-                        item_group_id = int(paths[1])
-                        item_group = data_provider.fetch_item_group_pool().get_item_group(item_group_id)
+                        item_group = data_provider.fetch_item_group_pool().get_item_group(id)
                         self.send_response_code(item_group)
                     case 3:
                         if paths[2] == "items":
-                            item_group_id = int(paths[1])
-                            items = data_provider.fetch_item_pool().get_items_for_item_group(item_group_id)
+                            items = data_provider.fetch_item_pool().get_items_for_item_group(id)
                             self.send_response_code(items)
                         else:
                             self.send_response(404)
                             self.end_headers()
 
-            elif paths[0] == AllResources.ITEM_TYPES.value:
+            elif paths[0] == AllResources.ITEM_TYPES.path:
                 match parts:
                     case 1:
                         item_types = data_provider.fetch_item_type_pool().get_item_types()
                         self.send_response_code(item_types)
                     case 2:
-                        item_type_id = int(paths[1])
-                        item_type = data_provider.fetch_item_type_pool().get_item_type(item_type_id)
+                        item_type = data_provider.fetch_item_type_pool().get_item_type(id)
                         self.send_response_code(item_type)
                     case 3:
                         if paths[2] == "items":
-                            item_type_id = int(paths[1])
-                            items = data_provider.fetch_item_pool().get_items_for_item_type(item_type_id)
+                            items = data_provider.fetch_item_pool().get_items_for_item_type(id)
                             self.send_response_code(items)
                         else:
                             self.send_response(404)
@@ -600,77 +589,68 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         self.send_response(404)
                         self.end_headers()
 
-            elif paths[0] == AllResources.SUPPLIERS.value:
+            elif paths[0] == AllResources.SUPPLIERS.path:
                 match parts:
                     case 1:
                         suppliers = data_provider.fetch_supplier_pool().get_suppliers()
                         self.send_response_code(suppliers)
                     case 2:
-                        supplier_id = int(paths[1])
-                        supplier = data_provider.fetch_supplier_pool().get_supplier(supplier_id)
+                        supplier = data_provider.fetch_supplier_pool().get_supplier(id)
                         self.send_response_code(supplier)
                     case 3:
                         if paths[2] == "items":
-                            supplier_id = int(paths[1])
-                            items = data_provider.fetch_item_pool().get_items_for_supplier(supplier_id)
+                            items = data_provider.fetch_item_pool().get_items_for_supplier(id)
                             self.send_response_code(supplier_id)
                         else:
                             self.send_response(404)
                             self.end_headers() 
 
-            elif paths[0] == AllResources.ORDERS.value:
+            elif paths[0] == AllResources.ORDERS.path:
                 match parts:
                     case 1:
                         orders = data_provider.fetch_order_pool().get_orders()
                         self.send_response_code(orders)
                     case 2:
-                        order_id = int(paths[1])
-                        order = data_provider.fetch_order_pool().get_order(order_id)
+                        order = data_provider.fetch_order_pool().get_order(id)
                         self.send_response_code(order)
                     case 3:
                         if paths[2] == "items":
-                            order_id = int(paths[1])
-                            items = data_provider.fetch_order_pool().get_items_in_order(order_id)
+                            items = data_provider.fetch_order_pool().get_items_in_order(id)
                             self.send_response_code(items)
                         else:
                             self.send_response(404)
                             self.end_headers()
 
-            elif paths[0] == AllResources.CLIENTS.value:
+            elif paths[0] == AllResources.CLIENTS.path:
                 match parts:
                     case 1:
                         clients = data_provider.fetch_client_pool().get_clients()
                         self.send_response_code(clients)
                     case 2:
-                        client_id = int(paths[1])
-                        client = data_provider.fetch_client_pool().get_client(client_id)
+                        client = data_provider.fetch_client_pool().get_client(id)
                         self.send_response_code(client)     
                     case 3:
                         if paths[2] == "orders":
-                            client_id = int(paths[1])
-                            orders = data_provider.fetch_order_pool().get_orders_for_client(client_id)
+                            orders = data_provider.fetch_order_pool().get_orders_for_client(id)
                             self.send_response_code(orders)
                         else:
                             self.send_response(404)
                             self.end_headers()
 
-            elif paths[0] == AllResources.SHIPMENTS.value:
+            elif paths[0] == AllResources.SHIPMENTS.path:
                 match parts:
                     case 1:
                         shipments = data_provider.fetch_shipment_pool().get_shipments()
                         self.send_response_code(shipments)
                     case 2:
-                        shipment_id = int(paths[1])
-                        shipment = data_provider.fetch_shipment_pool().get_shipment(shipment_id)
+                        shipment = data_provider.fetch_shipment_pool().get_shipment(id)
                         self.send_response_code(shipment)
                     case 3:
                         if paths[2] == "orders":
-                            shipment_id = int(paths[1])
-                            orders = data_provider.fetch_shipment_pool().get_order_ids_in_shipment(shipment_id)
+                            orders = data_provider.fetch_shipment_pool().get_order_ids_in_shipment(id)
                             self.send_response_code(orders)
                         elif paths[2] == "items":
-                            shipment_id = int(paths[1])
-                            items = data_provider.fetch_shipment_pool().get_items_in_shipment(shipment_id)
+                            items = data_provider.fetch_shipment_pool().get_items_in_shipment(id)
                             self.send_response_code(items)
                         else:
                             self.send_response(404)
