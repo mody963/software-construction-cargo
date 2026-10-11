@@ -116,8 +116,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == AllResources.LOCATIONS.path:
                             self.send_response_code(data_provider.fetch_location_pool().get_locations_in_warehouse(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
 
             elif paths[0] == AllResources.LOCATIONS.path:
                 match parts:
@@ -136,8 +135,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == AllResources.ITEMS.path:
                             self.send_response_code(data_provider.fetch_transfer_pool().get_items_in_transfer(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
                     
             elif paths[0] == AllResources.ITEMS.path:
                 match parts:
@@ -149,14 +147,12 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == AllResources.INVENTORY.path:
                             self.send_response_code(data_provider.fetch_inventory_pool().get_inventories_for_item(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
                     case 4:
                         if paths[2] == AllResources.INVENTORY.path and paths[3] == AllResources.TOTALS.path:
                             self.send_response_code(data_provider.fetch_inventory_pool().get_inventory_totals_for_item(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
 
             elif paths[0] == AllResources.ITEM_LINES.path:
                 match parts:
@@ -168,8 +164,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == AllResources.ITEMS.path:
                             self.send_response_code(data_provider.fetch_item_pool().get_items_for_item_line(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
 
             elif paths[0] == AllResources.ITEM_GROUPS.path:
                 match parts:
@@ -181,8 +176,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == AllResources.ITEMS.path:
                             self.send_response_code(data_provider.fetch_item_pool().get_items_for_item_group(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
 
             elif paths[0] == AllResources.ITEM_TYPES.path:
                 match parts:
@@ -194,8 +188,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == AllResources.ITEMS.path:
                             self.send_response_code(data_provider.fetch_item_pool().get_items_for_item_type(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
 
             elif paths[0] == AllResources.INVENTORIES.value:
                 match parts:
@@ -204,8 +197,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                     case 2:
                         # Inventory rows are keyed on a composite (item_id, location_id)
                         # in the new schema, so a single surrogate id has no meaning.
-                        self.send_response(404)
-                        self.end_headers()
+                        self.send_response_code(data=[], status_code=404)
 
             elif paths[0] == AllResources.SUPPLIERS.path:
                 match parts:
@@ -217,8 +209,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == AllResources.ITEMS.path:
                             self.send_response_code(data_provider.fetch_item_pool().get_items_for_supplier(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers() 
+                            self.send_response_code(data=[], status_code=404)
 
             elif paths[0] == AllResources.ORDERS.path:
                 match parts:
@@ -230,8 +221,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == AllResources.ITEMS.path:
                             self.send_response_code(data_provider.fetch_order_pool().get_items_in_order(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
 
             elif paths[0] == AllResources.CLIENTS.path:
                 match parts:
@@ -243,8 +233,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         if paths[2] == AllResources.ORDERS.path:
                             self.send_response_code(data_provider.fetch_order_pool().get_orders_for_client(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
 
             elif paths[0] == AllResources.SHIPMENTS.path:
                 match parts:
@@ -258,11 +247,9 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         elif paths[2] == AllResources.ITEMS.path:
                             self.send_response_code(data_provider.fetch_shipment_pool().get_items_in_shipment(resource_id))
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self.send_response_code(data=[], status_code=404)
 
             
-
     def do_GET(self):
         try:
             paths, user = self.validate_request("get")
