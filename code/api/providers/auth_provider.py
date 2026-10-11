@@ -11,11 +11,11 @@ def _load_users():
     with open(ROOT_PATH + "user.json", "r") as f:
         return json.load(f)
 
-def get_user(api_key):
+def get_user(api_key: str):
     users = _load_users()
-    for x in users:
-        if x["api_key"] == api_key:
-            return x
+    for user in users:
+        if user["api_key"] == api_key:
+            return user
     return None
 
 def has_access(user, paths, method):
