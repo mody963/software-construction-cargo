@@ -9,11 +9,43 @@ from processors import notification_processor
 
 class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
+    def send_json(self, status_code, data=None):
+        self.send_response(status_code)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        if data is not None:
+            self.wfile.write(json.dumps(data).encode("utf-8"))
+
+    def read_json(self):
+        content_length = int(self.headers.get("Content-Length", 0))
+        post_data = self.rfile.read(content_length)
+        return json.loads(post_data.decode())
+
+    def validate_request(self, required_method):
+        api_key = self.headers.get("API_KEY")
+        user = auth_provider.get_user(api_key)
+        
+        if user is None:
+            self.send_json(401)
+            return None, None
+
+        paths = self.path.split("/")
+        if len(paths) > 3 and paths[1] == "api" and paths[2] == "v1":
+            resource_paths = paths[3:]
+            
+            # Check direct of de user rechten heeft voor dit specifieke pad en methode
+            if not auth_provider.has_access(user, resource_paths, required_method):
+                self.send_json(403)
+                return None, None
+                
+            return resource_paths, user
+
+        self.send_json(404)
+        return None, None
+
+    
+
     def handle_get_version_1(self, paths, user):
-        if not auth_provider.has_access(user, paths, "get"):
-            self.send_response(403)
-            self.end_headers()
-            return
         if paths[0] == "warehouses":
             parts = len(paths)
             match parts:
@@ -373,25 +405,15 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_GET(self):
-        api_key = self.headers.get("API_KEY")
-        user = auth_provider.get_user(api_key)
-        if user == None:
-            self.send_response(401)
-            self.end_headers()
-        else:
-            try:
-                paths = self.path.split("/")
-                if len(paths) > 3 and paths[1] == "api" and paths[2] == "v1":
-                    self.handle_get_version_1(paths[3:], user)
-            except Exception:
-                self.send_response(500)
-                self.end_headers()
+        try:
+            paths, user = self.validate_request("get")
+            if paths is not None:
+                self.handle_get_version_1(paths, user)
+        except Exception:
+            self.send_json(500)
+
 
     def handle_post_version_1(self, paths, user):
-        if not auth_provider.has_access(user, paths, "post"):
-            self.send_response(403)
-            self.end_headers()
-            return
         if paths[0] == "warehouses":
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
@@ -494,25 +516,14 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_POST(self):
-        api_key = self.headers.get("API_KEY")
-        user = auth_provider.get_user(api_key)
-        if user == None:
-            self.send_response(401)
-            self.end_headers()
-        else:
-            try:
-                paths = self.path.split("/")
-                if len(paths) > 3 and paths[1] == "api" and paths[2] == "v1":
-                    self.handle_post_version_1(paths[3:], user)
-            except Exception:
-                self.send_response(500)
-                self.end_headers()
+        try:
+            paths, user = self.validate_request("post")
+            if paths is not None:
+                self.handle_post_version_1(paths, user)
+        except Exception:
+            self.send_json(500)
 
     def handle_put_version_1(self, paths, user):
-        if not auth_provider.has_access(user, paths, "put"):
-            self.send_response(403)
-            self.end_headers()
-            return
         if paths[0] == "warehouses":
             warehouse_id = int(paths[1])
             content_length = int(self.headers["Content-Length"])
@@ -715,25 +726,14 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_PUT(self):
-        api_key = self.headers.get("API_KEY")
-        user = auth_provider.get_user(api_key)
-        if user == None:
-            self.send_response(401)
-            self.end_headers()
-        else:
-            try:
-                paths = self.path.split("/")
-                if len(paths) > 3 and paths[1] == "api" and paths[2] == "v1":
-                    self.handle_put_version_1(paths[3:], user)
-            except Exception:
-                self.send_response(500)
-                self.end_headers()
+        try:
+            paths, user = self.validate_request("put")
+            if paths is not None:
+                self.handle_put_version_1(paths, user)
+        except Exception:
+            self.send_json(500)
 
     def handle_delete_version_1(self, paths, user):
-        if not auth_provider.has_access(user, paths, "delete"):
-            self.send_response(403)
-            self.end_headers()
-            return
         if paths[0] == "warehouses":
             warehouse_id = int(paths[1])
             data_provider.fetch_warehouse_pool().remove_warehouse(warehouse_id)
@@ -808,19 +808,12 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_DELETE(self):
-        api_key = self.headers.get("API_KEY")
-        user = auth_provider.get_user(api_key)
-        if user == None:
-            self.send_response(401)
-            self.end_headers()
-        else:
-            try:
-                paths = self.path.split("/")
-                if len(paths) > 3 and paths[1] == "api" and paths[2] == "v1":
-                    self.handle_delete_version_1(paths[3:], user)
-            except Exception:
-                self.send_response(500)
-                self.end_headers()
+        try:
+            paths, user = self.validate_request("delete")
+            if paths is not None:
+                self.handle_delete_version_1(paths, user)
+        except Exception:
+            self.send_json(500)
 
 if __name__ == "__main__":
     PORT = 3000
