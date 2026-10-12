@@ -37,7 +37,6 @@ class AllResources(Enum):
         self.max_path_length = max_path_length
 
 
-
 class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def send_json(self, status_code, data=None):
@@ -51,11 +50,10 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", 0))
         post_data = self.rfile.read(content_length)
         return json.loads(post_data.decode())
-
-    def validate_request(self, required_method:str):
+    
+    def validate_request(self, required_method: str):
         api_key = self.headers.get("API_KEY")
         user = auth_provider.get_user(api_key)
-        
         if user is None:
             self.send_json(401)
             return None, None
@@ -63,12 +61,10 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         paths = self.path.split("/")
         if len(paths) > 3 and paths[1] == "api" and paths[2] == "v1":
             resource_paths = paths[3:]
-            
             # Check direct of de user rechten heeft voor dit specifieke pad en methode
             if not auth_provider.has_access(user, resource_paths, required_method):
                 self.send_json(403)
                 return None, None
-                
             return resource_paths, user
 
         self.send_json(404)
@@ -80,67 +76,67 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data).encode("utf-8"))
 
-# alle losse functions die er zijn om zo de elif  evt weg te kunne halen. 
+    # alle losse functions die er zijn om zo de elif  evt weg te kunne halen.
+    
     GET_FUNCTIONS = {
     # warehouses
-        ("warehouses",): lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouses(),
-        ("warehouses", "id"):  lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouse(id),
-        ("warehouses", "id", "locations"): lambda resource_id: data_provider.fetch_location_pool().get_locations_in_warehouse(id),
+    ("warehouses",): lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouses(),
+    ("warehouses", "id"): lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouse(id),
+    ("warehouses", "id", "locations"): lambda resource_id: data_provider.fetch_location_pool().get_locations_in_warehouse(id),
 
     # locations
-        ("locations",): lambda resource_id: data_provider.fetch_location_pool().get_locations(),
-        ("locations", "id"): lambda resource_id: data_provider.fetch_location_pool().get_location(id),
+    ("locations",): lambda resource_id: data_provider.fetch_location_pool().get_locations(),
+    ("locations", "id"): lambda resource_id: data_provider.fetch_location_pool().get_location(id),
 
     # transfers
-        ("transfers",): lambda resource_id: data_provider.fetch_transfer_pool().get_transfers(),
-        ("transfers", "id"):  lambda id: data_provider.fetch_transfer_pool().get_transfer(id),
-        ("transfers", "id", "items"): lambda id: data_provider.fetch_transfer_pool().get_items_in_transfer(id),
+    ("transfers",): lambda resource_id: data_provider.fetch_transfer_pool().get_transfers(),
+    ("transfers", "id"): lambda id: data_provider.fetch_transfer_pool().get_transfer(id),
+    ("transfers", "id", "items"): lambda id: data_provider.fetch_transfer_pool().get_items_in_transfer(id),
 
     # items
-        ("items",): lambda resource_id: data_provider.fetch_item_pool().get_items(),
-        ("items", "id"): lambda resource_id: data_provider.fetch_item_pool().get_item(id),
-        ("items", "id", "inventory"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventories_for_item(id),
-        ("items", "id", "inventory", "totals"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventory_totals_for_item(id),
-
+    ("items",): lambda resource_id: data_provider.fetch_item_pool().get_items(),
+    ("items", "id"): lambda resource_id: data_provider.fetch_item_pool().get_item(id),
+    ("items", "id", "inventory"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventories_for_item(id),
+    ("items", "id", "inventory", "totals"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventory_totals_for_item(id),
 
     # item_lines
-        ("item_lines",):lambda resource_id: data_provider.fetch_item_line_pool().get_item_lines(),
-        ("item_lines", "id"):lambda resource_id: data_provider.fetch_item_line_pool().get_item_line(id),
-        ("item_lines", "id", "items"):lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_line(id),
+    ("item_lines",): lambda resource_id: data_provider.fetch_item_line_pool().get_item_lines(),
+    ("item_lines", "id"): lambda resource_id: data_provider.fetch_item_line_pool().get_item_line(id),
+    ("item_lines", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_line(id),
 
     # item_groups
-        ("item_groups",):lambda resource_id: data_provider.fetch_item_group_pool().get_item_groups(),
-        ("item_groups", "id"):   lambda resource_id: data_provider.fetch_item_group_pool().get_item_group(id),
-        ("item_groups", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_group(id),
+    ("item_groups",): lambda resource_id: data_provider.fetch_item_group_pool().get_item_groups(),
+    ("item_groups", "id"): lambda resource_id: data_provider.fetch_item_group_pool().get_item_group(id),
+    ("item_groups", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_group(id),
 
     # item_types
-        ("item_types",): lambda resource_id: data_provider.fetch_item_type_pool().get_item_types(),
-        ("item_types", "id"): lambda resource_id: data_provider.fetch_item_type_pool().get_item_type(id),
-        ("item_types", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_type(id),
+    ("item_types",): lambda resource_id: data_provider.fetch_item_type_pool().get_item_types(),
+    ("item_types", "id"): lambda resource_id: data_provider.fetch_item_type_pool().get_item_type(id),
+    ("item_types", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_type(id),
 
     # inventories
-        ("inventories",):lambda resource_id: data_provider.fetch_inventory_pool().get_inventories(),
+    ("inventories",): lambda resource_id: data_provider.fetch_inventory_pool().get_inventories(),
 
     # suppliers
-        ("suppliers",):lambda resource_id: data_provider.fetch_supplier_pool().get_suppliers(),
-        ("suppliers", "id"):lambda resource_id: data_provider.fetch_supplier_pool().get_supplier(id),
-        ("suppliers", "id", "items"):lambda resource_id: data_provider.fetch_item_pool().get_items_for_supplier(id),
+    ("suppliers",): lambda resource_id: data_provider.fetch_supplier_pool().get_suppliers(),
+    ("suppliers", "id"): lambda resource_id: data_provider.fetch_supplier_pool().get_supplier(id),
+    ("suppliers", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_supplier(id),
 
     # orders
-        ("orders",):lambda resource_id: data_provider.fetch_order_pool().get_orders(),
-        ("orders", "id"):lambda resource_id: data_provider.fetch_order_pool().get_order(id),
-        ("orders", "id", "items"):lambda resource_id: data_provider.fetch_order_pool().get_items_in_order(id),
+    ("orders",): lambda resource_id: data_provider.fetch_order_pool().get_orders(),
+    ("orders", "id"): lambda resource_id: data_provider.fetch_order_pool().get_order(id),
+    ("orders", "id", "items"): lambda resource_id: data_provider.fetch_order_pool().get_items_in_order(id),
 
     # clients
-        ("clients",):lambda resource_id: data_provider.fetch_client_pool().get_clients(),
-        ("clients", "id"):lambda resource_id: data_provider.fetch_client_pool().get_client(id),
-        ("clients", "id", "orders"):lambda resource_id: data_provider.fetch_order_pool().get_orders_for_client(id),
+    ("clients",): lambda resource_id: data_provider.fetch_client_pool().get_clients(),
+    ("clients", "id"): lambda resource_id: data_provider.fetch_client_pool().get_client(id),
+    ("clients", "id", "orders"): lambda resource_id: data_provider.fetch_order_pool().get_orders_for_client(id),
 
     # shipments
-        ("shipments",):lambda resource_id: data_provider.fetch_shipment_pool().get_shipments(),
-        ("shipments", "id"):lambda resource_id: data_provider.fetch_shipment_pool().get_shipment(id),
-        ("shipments", "id", "orders"):lambda resource_id: data_provider.fetch_shipment_pool().get_order_ids_in_shipment(id),
-        ("shipments", "id", "items"):lambda resource_id: data_provider.fetch_shipment_pool().get_items_in_shipment(id),
+    ("shipments",): lambda resource_id: data_provider.fetch_shipment_pool().get_shipments(),
+    ("shipments", "id"): lambda resource_id: data_provider.fetch_shipment_pool().get_shipment(id),
+    ("shipments", "id", "orders"): lambda resource_id: data_provider.fetch_shipment_pool().get_order_ids_in_shipment(id),
+    ("shipments", "id", "items"): lambda resource_id: data_provider.fetch_shipment_pool().get_items_in_shipment(id),
     }
 
     def handle_get_version_1(self, paths: list[str], user: str | None):
@@ -157,18 +153,18 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         route = self.GET_FUNCTIONS.get(key)
         if route == None:
             self.send_response_code(data=[], status_code=404)
-            return 
+            return
 
         resource_id = None
 
         if len(paths) > 1:
-            try: 
+            try:
                 resource_id = int(paths[1])
             except Exception as e:
                 self.send_response(400)
                 self.end_headers()
-                return 
-            
+                return
+
         if resource_id == None:
             result = route(resource_id)
             self.send_response_code(result)
@@ -177,15 +173,12 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             result = route(resource_id)
             self.send_response_code(result)
 
-
-
     # def handle_get_version_2(self, paths: list[str], user: str |None):
     #     parts= len(paths)
 
     #     if paths[0] not in [resource.value for resource in AllResources]:
     #         self.send_response(404)
     #         self.end_headers()
-
 
     #     # losse kijk of de case groter is dan de algemene lengte die het kan hebben mbv de enum
     #     resource = next((resource for resource in AllResources if resource.path == paths[0]),None)
@@ -235,7 +228,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
     #                         self.send_response_code(data_provider.fetch_transfer_pool().get_items_in_transfer(resource_id))
     #                     else:
     #                         self.send_response_code(data=[], status_code=404)
-                    
+
     #         elif paths[0] == AllResources.ITEMS.path:
     #             match parts:
     #                 case 1:
@@ -327,7 +320,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
     #                 case 1:
     #                     self.send_response_code(data_provider.fetch_client_pool().get_clients())
     #                 case 2:
-    #                     self.send_response_code(data_provider.fetch_client_pool().get_client(resource_id))     
+    #                     self.send_response_code(data_provider.fetch_client_pool().get_client(resource_id))
     #                 case 3:
     #                     if paths[2] == AllResources.ORDERS.path:
     #                         self.send_response_code(data_provider.fetch_order_pool().get_orders_for_client(resource_id))
@@ -348,7 +341,6 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
     #                     else:
     #                         self.send_response_code(data=[], status_code=404)
 
-            
     def do_GET(self):
         try:
             paths, user = self.validate_request("get")
@@ -356,7 +348,6 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_get_version_1(paths, user)
         except Exception:
             self.send_json(500)
-
 
     def handle_post_version_1(self, paths, user):
         if paths[0] == "warehouses":
@@ -381,7 +372,9 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             new_transfer = json.loads(post_data.decode())
             data_provider.fetch_transfer_pool().add_transfer(new_transfer)
             data_provider.fetch_transfer_pool().save()
-            notification_processor.push(f"Scheduled batch transfer {new_transfer['id']}")
+            notification_processor.push(
+                f"Scheduled batch transfer {new_transfer['id']}"
+            )
             self.send_response(201)
             self.end_headers()
         elif paths[0] == "items":
@@ -468,297 +461,479 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             self.send_json(500)
 
-    def handle_put_version_1(self, paths, user):
-        if paths[0] == "warehouses":
-            warehouse_id = int(paths[1])
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            updated_warehouse = json.loads(post_data.decode())
-            data_provider.fetch_warehouse_pool().update_warehouse(warehouse_id, updated_warehouse)
-            data_provider.fetch_warehouse_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "locations":
-            location_id = int(paths[1])
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            updated_location = json.loads(post_data.decode())
-            data_provider.fetch_location_pool().update_location(location_id, updated_location)
-            data_provider.fetch_location_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "transfers":
-            parts = len(paths)
-            match parts:
-                case 2:
-                    transfer_id = int(paths[1])
-                    content_length = int(self.headers["Content-Length"])
-                    post_data = self.rfile.read(content_length)
-                    updated_transfer = json.loads(post_data.decode())
-                    data_provider.fetch_transfer_pool().update_transfer(transfer_id, updated_transfer)
-                    data_provider.fetch_transfer_pool().save()
-                    self.send_response(200)
-                    self.end_headers()
-                case 3:
-                    if paths[2] == "commit":
-                        transfer_id = int(paths[1])
-                        transfer = data_provider.fetch_transfer_pool().get_transfer(transfer_id)
-                        from_location_id = transfer["from_location_id"]
-                        to_location_id = transfer["to_location_id"]
-                        inventory_pool = data_provider.fetch_inventory_pool()
-                        for x in transfer["items"]:
-                            item_id = x["item_id"]
-                            amount = x["amount"]
-                            # decrease on-hand at the source location
-                            src = inventory_pool.get_inventory(item_id, from_location_id)
-                            if src is not None:
-                                src["quantity_on_hand"] -= amount
-                                inventory_pool.update_inventory(item_id, from_location_id, src)
-                            # increase (or create) on-hand at the destination location
-                            dst = inventory_pool.get_inventory(item_id, to_location_id)
-                            if dst is not None:
-                                dst["quantity_on_hand"] += amount
-                                inventory_pool.update_inventory(item_id, to_location_id, dst)
-                            else:
-                                inventory_pool.add_inventory({
-                                    "item_id": item_id,
-                                    "location_id": to_location_id,
-                                    "quantity_on_hand": amount,
-                                    "quantity_expected": 0,
-                                    "quantity_ordered": 0,
-                                    "quantity_allocated": 0,
-                                })
-                        transfer["transfer_status"] = "Processed"
-                        transfer.pop("items", None)
-                        data_provider.fetch_transfer_pool().update_transfer(transfer_id, transfer)
-                        notification_processor.push(f"Processed batch transfer with id:{transfer['id']}")
-                        data_provider.fetch_transfer_pool().save()
-                        data_provider.fetch_inventory_pool().save()
-                        self.send_response(200)
-                        self.end_headers()
-                    else:
-                        self.send_response(404)
-                        self.end_headers()
-                case _:
-                    self.send_response(404)
-                    self.end_headers()
-        elif paths[0] == "items":
-            item_id = int(paths[1])
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            updated_item = json.loads(post_data.decode())
-            data_provider.fetch_item_pool().update_item(item_id, updated_item)
-            data_provider.fetch_item_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "item_lines":
-            item_line_id = int(paths[1])
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            updated_item_line = json.loads(post_data.decode())
-            data_provider.fetch_item_line_pool().update_item_line(item_line_id, updated_item_line)
-            data_provider.fetch_item_line_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "item_groups":
-            item_group_id = int(paths[1])
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            updated_item_group = json.loads(post_data.decode())
-            data_provider.fetch_item_group_pool().update_item_group(item_group_id, updated_item_group)
-            data_provider.fetch_item_group_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "item_types":
-            item_type_id = int(paths[1])
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            updated_item_type = json.loads(post_data.decode())
-            data_provider.fetch_item_type_pool().update_item_type(item_type_id, updated_item_type)
-            data_provider.fetch_item_type_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "inventories":
-            # Inventory rows are keyed on a composite (item_id, location_id); a
-            # single surrogate id is not meaningful in the new schema.
-            self.send_response(404)
-            self.end_headers()
-        elif paths[0] == "suppliers":
-            supplier_id = int(paths[1])
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            updated_supplier = json.loads(post_data.decode())
-            data_provider.fetch_supplier_pool().update_supplier(supplier_id, updated_supplier)
-            data_provider.fetch_supplier_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "orders":
-            parts = len(paths)
-            match parts:
-                case 2:
-                    order_id = int(paths[1])
-                    content_length = int(self.headers["Content-Length"])
-                    post_data = self.rfile.read(content_length)
-                    updated_order = json.loads(post_data.decode())
-                    data_provider.fetch_order_pool().update_order(order_id, updated_order)
-                    data_provider.fetch_order_pool().save()
-                    self.send_response(200)
-                    self.end_headers()
-                case 3:
-                    if paths[2] == "items":
-                        order_id = int(paths[1])
-                        content_length = int(self.headers["Content-Length"])
-                        post_data = self.rfile.read(content_length)
-                        updated_items = json.loads(post_data.decode())
-                        data_provider.fetch_order_pool().update_items_in_order(order_id, updated_items)
-                        data_provider.fetch_order_pool().save()
-                        self.send_response(200)
-                        self.end_headers()
-                    else:
-                        self.send_response(404)
-                        self.end_headers()
-                case _:
-                    self.send_response(404)
-                    self.end_headers()
-        elif paths[0] == "clients":
-            client_id = int(paths[1])
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            updated_client = json.loads(post_data.decode())
-            data_provider.fetch_client_pool().update_client(client_id, updated_client)
-            data_provider.fetch_client_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "shipments":
-            parts = len(paths)
-            match parts:
-                case 2:
-                    shipment_id = int(paths[1])
-                    content_length = int(self.headers["Content-Length"])
-                    post_data = self.rfile.read(content_length)
-                    updated_shipment = json.loads(post_data.decode())
-                    data_provider.fetch_shipment_pool().update_shipment(shipment_id, updated_shipment)
-                    data_provider.fetch_shipment_pool().save()
-                    self.send_response(200)
-                    self.end_headers()
-                case 3:
-                    if paths[2] == "orders":
-                        shipment_id = int(paths[1])
-                        content_length = int(self.headers["Content-Length"])
-                        post_data = self.rfile.read(content_length)
-                        updated_orders = json.loads(post_data.decode())
-                        data_provider.fetch_shipment_pool().update_orders_in_shipment(shipment_id, updated_orders)
-                        data_provider.fetch_shipment_pool().save()
-                        self.send_response(200)
-                        self.end_headers()
-                    elif paths[2] == "items":
-                        shipment_id = int(paths[1])
-                        content_length = int(self.headers["Content-Length"])
-                        post_data = self.rfile.read(content_length)
-                        updated_items = json.loads(post_data.decode())
-                        data_provider.fetch_shipment_pool().update_items_in_shipment(shipment_id, updated_items)
-                        data_provider.fetch_shipment_pool().save()
-                        self.send_response(200)
-                        self.end_headers()
-                    else:
-                        self.send_response(404)
-                        self.end_headers()
-                case _:
-                    self.send_response(404)
-                    self.end_headers()
+    def put_warehouse_route(self, warehouse_id):
+        updated_warehouse = self.read_json()
+
+        warehouse_pool = data_provider.fetch_warehouse_pool()
+        warehouse_pool.update_warehouse(warehouse_id, updated_warehouse)
+        warehouse_pool.save()
+
+        self.send_json(200)
+
+    def put_location_route(self, location_id):
+        updated_location = self.read_json()
+
+        location_pool = data_provider.fetch_location_pool()
+        location_pool.update_location(location_id, updated_location)
+        location_pool.save()
+
+        self.send_json(200)
+
+    def put_transfers_route(self, transfer_id):
+        updated_transfer = self.read_json()
+
+        transfer_pool = data_provider.fetch_transfer_pool()
+        transfer_pool.update_transfer(transfer_id, updated_transfer)
+        transfer_pool.save()
+
+        self.send_json(200)
+
+    def put_transfers_commit_route(self, transfer_id):
+        transfer_pool = data_provider.fetch_transfer_pool()
+        inventory_pool = data_provider.fetch_inventory_pool()
+
+        transfer = transfer_pool.get_transfer(transfer_id)
+
+        if transfer is None:
+            self.send_json(404)
+            return
+
+        from_location_id = transfer["from_location_id"]
+        to_location_id = transfer["to_location_id"]
+
+        for item in transfer["items"]:
+            item_id = item["item_id"]
+            amount = item["amount"]
+
+            # De voorraad op de bronlocatie verlagen
+            source = inventory_pool.get_inventory(item_id, from_location_id)
+
+            if source is not None:
+                source["quantity_on_hand"] -= amount
+                inventory_pool.update_inventory(item_id, from_location_id, source)
+
+            # De voorraad op de bestemmingslocatie verhogen
+            destination = inventory_pool.get_inventory(item_id, to_location_id)
+
+            if destination is not None:
+                destination["quantity_on_hand"] += amount
+                inventory_pool.update_inventory(item_id, to_location_id, destination)
+            else:
+                inventory_pool.add_inventory(
+                    {
+                        "item_id": item_id,
+                        "location_id": to_location_id,
+                        "quantity_on_hand": amount,
+                        "quantity_expected": 0,
+                        "quantity_ordered": 0,
+                        "quantity_allocated": 0,
+                    }
+                )
+
+        transfer["transfer_status"] = "Processed"
+        transfer.pop("items", None)
+
+        transfer_pool.update_transfer(transfer_id, transfer)
+
+        notification_processor.push(
+            f"Processed batch transfer with id:{transfer['id']}"
+        )
+
+        transfer_pool.save()
+        inventory_pool.save()
+
+        self.send_json(200)
+
+    def put_items_route(self, item_id):
+        updated_item = self.read_json()
+
+        item_pool = data_provider.fetch_item_pool()
+        item_pool.update_item(item_id, updated_item)
+        item_pool.save()
+
+        self.send_json(200)
+    
+    def put_item_lines_route(self, item_line_id):
+        updated_item_line = self.read_json()
+
+        item_line_pool = data_provider.fetch_item_line_pool()
+        item_line_pool.update_item_line(item_line_id, updated_item_line)
+        item_line_pool.save()
+
+        self.send_json(200)
+
+    def put_item_groups_route(self, item_group_id):
+            item_group_line = self.read_json()
+    
+            item_group_pool = data_provider.fetch_item_group_pool()
+            item_group_pool.update_item_group(item_group_id, item_group_line)
+            item_group_pool.save()
+    
+            self.send_json(200)
+
+    PUT_FUNCTIONS = {
+        ("warehouses", "id"): put_warehouse_route,
+        ("locations", "id"): put_location_route,
+        ("transfers", "id"): put_transfers_route,
+        ("transfers", "id", "commit"): put_transfers_commit_route,
+    }
+
+    def handle_put_version_1(self, paths):
+        if len(paths) == 2:
+            resource = paths[0]
+            resource_id = int(paths[1])
+
+            put_function = self.PUT_FUNCTIONS.get((resource, "id"))
+
+        elif len(paths) == 3 and paths[2] == "commit":
+            resource = paths[0]
+            resource_id = int(paths[1])
+
+            put_function = self.PUT_FUNCTIONS.get((resource, "id", "commit"))
+
         else:
-            self.send_response(404)
-            self.end_headers()
+            self.send_json(404)
+            return
+
+        if put_function is None:
+            self.send_json(404)
+            return
+
+        put_function(self, resource_id)
 
     def do_PUT(self):
-        try:
-            paths, user = self.validate_request("put")
-            if paths is not None:
-                self.handle_put_version_1(paths, user)
-        except Exception:
-            self.send_json(500)
+        paths, user = self.validate_request("PUT")
 
-    def handle_delete_version_1(self, paths, user):
-        if paths[0] == "warehouses":
-            warehouse_id = int(paths[1])
-            data_provider.fetch_warehouse_pool().remove_warehouse(warehouse_id)
-            data_provider.fetch_warehouse_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "locations":
-            location_id = int(paths[1])
-            data_provider.fetch_location_pool().remove_location(location_id)
-            data_provider.fetch_location_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "transfers":
-            transfer_id = int(paths[1])
-            data_provider.fetch_transfer_pool().remove_transfer(transfer_id)
-            data_provider.fetch_transfer_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "items":
-            item_id = int(paths[1])
-            data_provider.fetch_item_pool().remove_item(item_id)
-            data_provider.fetch_item_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "item_lines":
-            item_line_id = int(paths[1])
-            data_provider.fetch_item_line_pool().remove_item_line(item_line_id)
-            data_provider.fetch_item_line_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "item_groups":
-            item_group_id = int(paths[1])
-            data_provider.fetch_item_group_pool().remove_item_group(item_group_id)
-            data_provider.fetch_item_group_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "item_types":
-            item_type_id = int(paths[1])
-            data_provider.fetch_item_type_pool().remove_item_type(item_type_id)
-            data_provider.fetch_item_type_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "inventories":
-            self.send_response(404)
-            self.end_headers()
-        elif paths[0] == "suppliers":
-            supplier_id = int(paths[1])
-            data_provider.fetch_supplier_pool().remove_supplier(supplier_id)
-            data_provider.fetch_supplier_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "orders":
-            order_id = int(paths[1])
-            data_provider.fetch_order_pool().remove_order(order_id)
-            data_provider.fetch_order_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "clients":
-            client_id = int(paths[1])
-            data_provider.fetch_client_pool().remove_client(client_id)
-            data_provider.fetch_client_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        elif paths[0] == "shipments":
-            shipment_id = int(paths[1])
-            data_provider.fetch_shipment_pool().remove_shipment(shipment_id)
-            data_provider.fetch_shipment_pool().save()
-            self.send_response(200)
-            self.end_headers()
-        else:
-            self.send_response(404)
-            self.end_headers()
+        if paths is None:
+            return
 
-    def do_DELETE(self):
-        try:
-            paths, user = self.validate_request("delete")
-            if paths is not None:
-                self.handle_delete_version_1(paths, user)
-        except Exception:
-            self.send_json(500)
+        self.handle_put_version_1(paths)
+
+
+# def handle_put_version_2(self, paths, user):
+#     if paths[0] == "warehouses":
+#         warehouse_id = int(paths[1])
+#         content_length = int(self.headers["Content-Length"])
+#         post_data = self.rfile.read(content_length)
+#         updated_warehouse = json.loads(post_data.decode())
+#         data_provider.fetch_warehouse_pool().update_warehouse(
+#             warehouse_id, updated_warehouse
+#         )
+#         data_provider.fetch_warehouse_pool().save()
+#         self.send_response(200)
+#         self.end_headers()
+#     elif paths[0] == "locations":
+#         location_id = int(paths[1])
+#         content_length = int(self.headers["Content-Length"])
+#         post_data = self.rfile.read(content_length)
+#         updated_location = json.loads(post_data.decode())
+#         data_provider.fetch_location_pool().update_location(
+#             location_id, updated_location
+#         )
+#         data_provider.fetch_location_pool().save()
+#         self.send_response(200)
+#         self.end_headers()
+#     elif paths[0] == "transfers":
+#         parts = len(paths)
+#         match parts:
+#             case 2:
+#                 transfer_id = int(paths[1])
+#                 content_length = int(self.headers["Content-Length"])
+#                 post_data = self.rfile.read(content_length)
+#                 updated_transfer = json.loads(post_data.decode())
+#                 data_provider.fetch_transfer_pool().update_transfer(
+#                     transfer_id, updated_transfer
+#                 )
+#                 data_provider.fetch_transfer_pool().save()
+#                 self.send_response(200)
+#                 self.end_headers()
+#             case 3:
+#                 if paths[2] == "commit":
+#                     transfer_id = int(paths[1])
+#                     transfer = data_provider.fetch_transfer_pool().get_transfer(
+#                         transfer_id
+#                     )
+#                     from_location_id = transfer["from_location_id"]
+#                     to_location_id = transfer["to_location_id"]
+#                     inventory_pool = data_provider.fetch_inventory_pool()
+#                     for x in transfer["items"]:
+#                         item_id = x["item_id"]
+#                         amount = x["amount"]
+#                         # decrease on-hand at the source location
+#                         src = inventory_pool.get_inventory(
+#                             item_id, from_location_id
+#                         )
+#                         if src is not None:
+#                             src["quantity_on_hand"] -= amount
+#                             inventory_pool.update_inventory(
+#                                 item_id, from_location_id, src
+#                             )
+#                         # increase (or create) on-hand at the destination location
+#                         dst = inventory_pool.get_inventory(item_id, to_location_id)
+#                         if dst is not None:
+#                             dst["quantity_on_hand"] += amount
+#                             inventory_pool.update_inventory(
+#                                 item_id, to_location_id, dst
+#                             )
+#                         else:
+#                             inventory_pool.add_inventory(
+#                                 {
+#                                     "item_id": item_id,
+#                                     "location_id": to_location_id,
+#                                     "quantity_on_hand": amount,
+#                                     "quantity_expected": 0,
+#                                     "quantity_ordered": 0,
+#                                     "quantity_allocated": 0,
+#                                 }
+#                             )
+#                     transfer["transfer_status"] = "Processed"
+#                     transfer.pop("items", None)
+#                     data_provider.fetch_transfer_pool().update_transfer(
+#                         transfer_id, transfer
+#                     )
+#                     notification_processor.push(
+#                         f"Processed batch transfer with id:{transfer['id']}"
+#                     )
+#                     data_provider.fetch_transfer_pool().save()
+#                     data_provider.fetch_inventory_pool().save()
+#                     self.send_response(200)
+#                     self.end_headers()
+#                 else:
+#                     self.send_response(404)
+#                     self.end_headers()
+#             case _:
+#                 self.send_response(404)
+#                 self.end_headers()
+#     elif paths[0] == "items":
+#         item_id = int(paths[1])
+#         content_length = int(self.headers["Content-Length"])
+#         post_data = self.rfile.read(content_length)
+#         updated_item = json.loads(post_data.decode())
+#         data_provider.fetch_item_pool().update_item(item_id, updated_item)
+#         data_provider.fetch_item_pool().save()
+#         self.send_response(200)
+#         self.end_headers()
+#     elif paths[0] == "item_lines":
+#         item_line_id = int(paths[1])
+#         content_length = int(self.headers["Content-Length"])
+#         post_data = self.rfile.read(content_length)
+#         updated_item_line = json.loads(post_data.decode())
+#         data_provider.fetch_item_line_pool().update_item_line(
+#             item_line_id, updated_item_line
+#         )
+#         data_provider.fetch_item_line_pool().save()
+#         self.send_response(200)
+#         self.end_headers()
+#     elif paths[0] == "item_groups":
+#         item_group_id = int(paths[1])
+#         content_length = int(self.headers["Content-Length"])
+#         post_data = self.rfile.read(content_length)
+#         updated_item_group = json.loads(post_data.decode())
+#         data_provider.fetch_item_group_pool().update_item_group(
+#             item_group_id, updated_item_group
+#         )
+#         data_provider.fetch_item_group_pool().save()
+#         self.send_response(200)
+#         self.end_headers()
+#     elif paths[0] == "item_types":
+#         item_type_id = int(paths[1])
+#         content_length = int(self.headers["Content-Length"])
+#         post_data = self.rfile.read(content_length)
+#         updated_item_type = json.loads(post_data.decode())
+#         data_provider.fetch_item_type_pool().update_item_type(
+#             item_type_id, updated_item_type
+#         )
+#         data_provider.fetch_item_type_pool().save()
+#         self.send_response(200)
+#         self.end_headers()
+#     elif paths[0] == "inventories":
+#         # Inventory rows are keyed on a composite (item_id, location_id); a
+#         # single surrogate id is not meaningful in the new schema.
+#         self.send_response(404)
+#         self.end_headers()
+#     elif paths[0] == "suppliers":
+#         supplier_id = int(paths[1])
+#         content_length = int(self.headers["Content-Length"])
+#         post_data = self.rfile.read(content_length)
+#         updated_supplier = json.loads(post_data.decode())
+#         data_provider.fetch_supplier_pool().update_supplier(
+#             supplier_id, updated_supplier
+#         )
+#         data_provider.fetch_supplier_pool().save()
+#         self.send_response(200)
+#         self.end_headers()
+#     elif paths[0] == "orders":
+#         parts = len(paths)
+#         match parts:
+#             case 2:
+#                 order_id = int(paths[1])
+#                 content_length = int(self.headers["Content-Length"])
+#                 post_data = self.rfile.read(content_length)
+#                 updated_order = json.loads(post_data.decode())
+#                 data_provider.fetch_order_pool().update_order(
+#                     order_id, updated_order
+#                 )
+#                 data_provider.fetch_order_pool().save()
+#                 self.send_response(200)
+#                 self.end_headers()
+#             case 3:
+#                 if paths[2] == "items":
+#                     order_id = int(paths[1])
+#                     content_length = int(self.headers["Content-Length"])
+#                     post_data = self.rfile.read(content_length)
+#                     updated_items = json.loads(post_data.decode())
+#                     data_provider.fetch_order_pool().update_items_in_order(
+#                         order_id, updated_items
+#                     )
+#                     data_provider.fetch_order_pool().save()
+#                     self.send_response(200)
+#                     self.end_headers()
+#                 else:
+#                     self.send_response(404)
+#                     self.end_headers()
+#             case _:
+#                 self.send_response(404)
+#                 self.end_headers()
+#     elif paths[0] == "clients":
+#         client_id = int(paths[1])
+#         content_length = int(self.headers["Content-Length"])
+#         post_data = self.rfile.read(content_length)
+#         updated_client = json.loads(post_data.decode())
+#         data_provider.fetch_client_pool().update_client(client_id, updated_client)
+#         data_provider.fetch_client_pool().save()
+#         self.send_response(200)
+#         self.end_headers()
+#     elif paths[0] == "shipments":
+#         parts = len(paths)
+#         match parts:
+#             case 2:
+#                 shipment_id = int(paths[1])
+#                 content_length = int(self.headers["Content-Length"])
+#                 post_data = self.rfile.read(content_length)
+#                 updated_shipment = json.loads(post_data.decode())
+#                 data_provider.fetch_shipment_pool().update_shipment(
+#                     shipment_id, updated_shipment
+#                 )
+#                 data_provider.fetch_shipment_pool().save()
+#                 self.send_response(200)
+#                 self.end_headers()
+#             case 3:
+#                 if paths[2] == "orders":
+#                     shipment_id = int(paths[1])
+#                     content_length = int(self.headers["Content-Length"])
+#                     post_data = self.rfile.read(content_length)
+#                     updated_orders = json.loads(post_data.decode())
+#                     data_provider.fetch_shipment_pool().update_orders_in_shipment(
+#                         shipment_id, updated_orders
+#                     )
+#                     data_provider.fetch_shipment_pool().save()
+#                     self.send_response(200)
+#                     self.end_headers()
+#                 elif paths[2] == "items":
+#                     shipment_id = int(paths[1])
+#                     content_length = int(self.headers["Content-Length"])
+#                     post_data = self.rfile.read(content_length)
+#                     updated_items = json.loads(post_data.decode())
+#                     data_provider.fetch_shipment_pool().update_items_in_shipment(
+#                         shipment_id, updated_items
+#                     )
+#                     data_provider.fetch_shipment_pool().save()
+#                     self.send_response(200)
+#                     self.end_headers()
+#                 else:
+#                     self.send_response(404)
+#                     self.end_headers()
+#             case _:
+#                 self.send_response(404)
+#                 self.end_headers()
+#     else:
+#         self.send_response(404)
+#         self.end_headers()
+
+
+def handle_delete_version_1(self, paths, user):
+    if paths[0] == "warehouses":
+        warehouse_id = int(paths[1])
+        data_provider.fetch_warehouse_pool().remove_warehouse(warehouse_id)
+        data_provider.fetch_warehouse_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "locations":
+        location_id = int(paths[1])
+        data_provider.fetch_location_pool().remove_location(location_id)
+        data_provider.fetch_location_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "transfers":
+        transfer_id = int(paths[1])
+        data_provider.fetch_transfer_pool().remove_transfer(transfer_id)
+        data_provider.fetch_transfer_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "items":
+        item_id = int(paths[1])
+        data_provider.fetch_item_pool().remove_item(item_id)
+        data_provider.fetch_item_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "item_lines":
+        item_line_id = int(paths[1])
+        data_provider.fetch_item_line_pool().remove_item_line(item_line_id)
+        data_provider.fetch_item_line_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "item_groups":
+        item_group_id = int(paths[1])
+        data_provider.fetch_item_group_pool().remove_item_group(item_group_id)
+        data_provider.fetch_item_group_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "item_types":
+        item_type_id = int(paths[1])
+        data_provider.fetch_item_type_pool().remove_item_type(item_type_id)
+        data_provider.fetch_item_type_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "inventories":
+        self.send_response(404)
+        self.end_headers()
+    elif paths[0] == "suppliers":
+        supplier_id = int(paths[1])
+        data_provider.fetch_supplier_pool().remove_supplier(supplier_id)
+        data_provider.fetch_supplier_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "orders":
+        order_id = int(paths[1])
+        data_provider.fetch_order_pool().remove_order(order_id)
+        data_provider.fetch_order_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "clients":
+        client_id = int(paths[1])
+        data_provider.fetch_client_pool().remove_client(client_id)
+        data_provider.fetch_client_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    elif paths[0] == "shipments":
+        shipment_id = int(paths[1])
+        data_provider.fetch_shipment_pool().remove_shipment(shipment_id)
+        data_provider.fetch_shipment_pool().save()
+        self.send_response(200)
+        self.end_headers()
+    else:
+        self.send_response(404)
+        self.end_headers()
+
+
+def do_DELETE(self):
+    try:
+        paths, user = self.validate_request("delete")
+        if paths is not None:
+            self.handle_delete_version_1(paths, user)
+    except Exception:
+        self.send_json(500)
+
 
 if __name__ == "__main__":
     PORT = 3000
