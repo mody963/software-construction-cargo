@@ -13,9 +13,9 @@ def _load_users():
 
 def get_user(api_key):
     users = _load_users()
-    for x in users:
-        if x["api_key"] == api_key:
-            return x
+    for user in users:
+        if user["api_key"] == api_key:
+            return user
     return None
 
 def has_access(user, paths, method):
