@@ -37,7 +37,6 @@ class AllResources(Enum):
         self.max_path_length = max_path_length
 
 
-
 class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def send_json(self, status_code, data=None):
@@ -52,10 +51,10 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         return json.loads(post_data.decode())
 
-    def validate_request(self, required_method:str):
+    def validate_request(self, required_method: str):
         api_key = self.headers.get("API_KEY")
         user = auth_provider.get_user(api_key)
-        
+
         if user is None:
             self.send_json(401)
             return None, None
@@ -63,96 +62,110 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         paths = self.path.split("/")
         if len(paths) > 3 and paths[1] == "api" and paths[2] == "v1":
             resource_paths = paths[3:]
-            
+
             # Check direct of de user rechten heeft voor dit specifieke pad en methode
             if not auth_provider.has_access(user, resource_paths, required_method):
                 self.send_json(403)
                 return None, None
-                
+
             return resource_paths, user
 
         self.send_json(404)
         return None, None
 
 
-# alle losse functions die er zijn om zo de elif  evt weg te kunne halen. 
+# alle losse functions die er zijn om zo de elif  evt weg te kunne halen.
     GET_FUNCTIONS = {
-    # warehouses
+        # warehouses
         ("warehouses",): lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouses(),
         ("warehouses", "id"): lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouse(resource_id),
         ("warehouses", "id", "locations"): lambda resource_id: data_provider.fetch_location_pool().get_locations_in_warehouse(resource_id),
 
-    # locations
+        # locations
         ("locations",): lambda resource_id: data_provider.fetch_location_pool().get_locations(),
         ("locations", "id"): lambda resource_id: data_provider.fetch_location_pool().get_location(resource_id),
 
-    # transfers
+        # transfers
         ("transfers",): lambda resource_id: data_provider.fetch_transfer_pool().get_transfers(),
         ("transfers", "id"): lambda resource_id: data_provider.fetch_transfer_pool().get_transfer(resource_id),
         ("transfers", "id", "items"): lambda resource_id: data_provider.fetch_transfer_pool().get_items_in_transfer(resource_id),
 
-    # items
+        # items
         ("items",): lambda resource_id: data_provider.fetch_item_pool().get_items(),
         ("items", "id"): lambda resource_id: data_provider.fetch_item_pool().get_item(resource_id),
         ("items", "id", "inventory"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventories_for_item(resource_id),
         ("items", "id", "inventory", "totals"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventory_totals_for_item(resource_id),
 
-    # item_lines
+        # item_lines
         ("item_lines",): lambda resource_id: data_provider.fetch_item_line_pool().get_item_lines(),
         ("item_lines", "id"): lambda resource_id: data_provider.fetch_item_line_pool().get_item_line(resource_id),
         ("item_lines", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_line(resource_id),
 
-    # item_groups
+        # item_groups
         ("item_groups",): lambda resource_id: data_provider.fetch_item_group_pool().get_item_groups(),
         ("item_groups", "id"): lambda resource_id: data_provider.fetch_item_group_pool().get_item_group(resource_id),
         ("item_groups", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_group(resource_id),
 
-    # item_types
+        # item_types
         ("item_types",): lambda resource_id: data_provider.fetch_item_type_pool().get_item_types(),
         ("item_types", "id"): lambda resource_id: data_provider.fetch_item_type_pool().get_item_type(resource_id),
         ("item_types", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_type(resource_id),
 
-    # inventories
+        # inventories
         ("inventories",): lambda resource_id: data_provider.fetch_inventory_pool().get_inventories(),
 
-    # suppliers
+        # suppliers
         ("suppliers",): lambda resource_id: data_provider.fetch_supplier_pool().get_suppliers(),
         ("suppliers", "id"): lambda resource_id: data_provider.fetch_supplier_pool().get_supplier(resource_id),
         ("suppliers", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_supplier(resource_id),
 
-    # orders
+        # orders
         ("orders",): lambda resource_id: data_provider.fetch_order_pool().get_orders(),
         ("orders", "id"): lambda resource_id: data_provider.fetch_order_pool().get_order(resource_id),
         ("orders", "id", "items"): lambda resource_id: data_provider.fetch_order_pool().get_items_in_order(resource_id),
 
-    # clients
+        # clients
         ("clients",): lambda resource_id: data_provider.fetch_client_pool().get_clients(),
         ("clients", "id"): lambda resource_id: data_provider.fetch_client_pool().get_client(resource_id),
         ("clients", "id", "orders"): lambda resource_id: data_provider.fetch_order_pool().get_orders_for_client(resource_id),
 
-    # shipments
+        # shipments
         ("shipments",): lambda resource_id: data_provider.fetch_shipment_pool().get_shipments(),
         ("shipments", "id"): lambda resource_id: data_provider.fetch_shipment_pool().get_shipment(resource_id),
         ("shipments", "id", "orders"): lambda resource_id: data_provider.fetch_shipment_pool().get_order_ids_in_shipment(resource_id),
         ("shipments", "id", "items"): lambda resource_id: data_provider.fetch_shipment_pool().get_items_in_shipment(resource_id),
     }
 
-# alle losse functions die er zijn om zo de elif  evt weg te kunne halen. 
+    POST_FUNCTIONS = {
+        ("warehouses",): lambda resource: data_provider.fetch_warehouse_pool().add_warehouse(resource),
+        ("locations",): lambda resource: data_provider.fetch_location_pool().add_location(resource),
+        ("transfers",): lambda resource: data_provider.fetch_transfer_pool().add_transfer(resource),
+        ("items",): lambda resource: data_provider.fetch_item_pool().add_item(resource),
+        ("item_lines",): lambda resource: data_provider.fetch_item_line_pool().add_item_line(resource),
+        ("item_groups",): lambda resource: data_provider.fetch_item_group_pool().add_item_group(resource),
+        ("item_types",): lambda resource: data_provider.fetch_item_type_pool().add_item_type(resource),
+        ("inventories",): lambda resource: data_provider.fetch_inventory_pool().add_inventory(resource),
+        ("suppliers",): lambda resource: data_provider.fetch_supplier_pool().add_supplier(resource),
+        ("orders",): lambda resource: data_provider.fetch_order_pool().add_order(resource),
+        ("clients",): lambda resource: data_provider.fetch_client_pool().add_client(resource),
+        ("shipments",): lambda resource: data_provider.fetch_shipment_pool().add_shipment(resource),
+    }
+
+# alle losse functions die er zijn om zo de elif  evt weg te kunne halen.
     DELETE_FUNCTIONS = {
 
-    "warehouses": lambda id: (data_provider.fetch_warehouse_pool().remove_warehouse(id), data_provider.fetch_warehouse_pool().save()),
-    "locations": lambda id: (data_provider.fetch_location_pool().remove_location(id), data_provider.fetch_location_pool().save()),
-    "transfers": lambda id: (data_provider.fetch_transfer_pool().remove_transfer(id), data_provider.fetch_transfer_pool().save()),
-    "items": lambda id: (data_provider.fetch_item_pool().remove_item(id), data_provider.fetch_item_pool().save()),
-    "item_lines": lambda id: (data_provider.fetch_item_line_pool().remove_item_line(id), data_provider.fetch_item_line_pool().save()),
-    "item_groups": lambda id: (data_provider.fetch_item_group_pool().remove_item_group(id), data_provider.fetch_item_group_pool().save()),
-    "item_types": lambda id: (data_provider.fetch_item_type_pool().remove_item_type(id), data_provider.fetch_item_type_pool().save()),
-    "suppliers": lambda id: (data_provider.fetch_supplier_pool().remove_supplier(id), data_provider.fetch_supplier_pool().save()),
-    "orders": lambda id: (data_provider.fetch_order_pool().remove_order(id), data_provider.fetch_order_pool().save()),
-    "clients": lambda id: (data_provider.fetch_client_pool().remove_client(id), data_provider.fetch_client_pool().save()),
-    "shipments": lambda id: (data_provider.fetch_shipment_pool().remove_shipment(id), data_provider.fetch_shipment_pool().save()),
-}
-
+        "warehouses": lambda id: (data_provider.fetch_warehouse_pool().remove_warehouse(id), data_provider.fetch_warehouse_pool().save()),
+        "locations": lambda id: (data_provider.fetch_location_pool().remove_location(id), data_provider.fetch_location_pool().save()),
+        "transfers": lambda id: (data_provider.fetch_transfer_pool().remove_transfer(id), data_provider.fetch_transfer_pool().save()),
+        "items": lambda id: (data_provider.fetch_item_pool().remove_item(id), data_provider.fetch_item_pool().save()),
+        "item_lines": lambda id: (data_provider.fetch_item_line_pool().remove_item_line(id), data_provider.fetch_item_line_pool().save()),
+        "item_groups": lambda id: (data_provider.fetch_item_group_pool().remove_item_group(id), data_provider.fetch_item_group_pool().save()),
+        "item_types": lambda id: (data_provider.fetch_item_type_pool().remove_item_type(id), data_provider.fetch_item_type_pool().save()),
+        "suppliers": lambda id: (data_provider.fetch_supplier_pool().remove_supplier(id), data_provider.fetch_supplier_pool().save()),
+        "orders": lambda id: (data_provider.fetch_order_pool().remove_order(id), data_provider.fetch_order_pool().save()),
+        "clients": lambda id: (data_provider.fetch_client_pool().remove_client(id), data_provider.fetch_client_pool().save()),
+        "shipments": lambda id: (data_provider.fetch_shipment_pool().remove_shipment(id), data_provider.fetch_shipment_pool().save()),
+    }
 
     def handle_get_version_1(self, paths: list[str], user: str | None):
         key_delen = []
@@ -172,20 +185,18 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         resource_id = None
 
         if len(paths) > 1:
-            try: 
+            try:
                 resource_id = int(paths[1])
             except ValueError:
-                return self.send_json(400) # Voorkomt de 500-crash met strings
-            
+                return self.send_json(400)  # Voorkomt de 500-crash met strings
+
         result = route(resource_id)
 
         # Voorkomt dat een niet-bestaand ID (zoals 9999) een 200 met null geeft
         if result is None:
             return self.send_json(404)
-            
+
         self.send_json(200, result)
-
-
 
     # def handle_get_version_2(self, paths: list[str], user: str |None):
     #     parts= len(paths)
@@ -193,7 +204,6 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
     #     if paths[0] not in [resource.value for resource in AllResources]:
     #         self.send_response(404)
     #         self.end_headers()
-
 
     #     # losse kijk of de case groter is dan de algemene lengte die het kan hebben mbv de enum
     #     resource = next((resource for resource in AllResources if resource.path == paths[0]),None)
@@ -243,7 +253,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
     #                         self.send_response_code(data_provider.fetch_transfer_pool().get_items_in_transfer(resource_id))
     #                     else:
     #                         self.send_response_code(data=[], status_code=404)
-                    
+
     #         elif paths[0] == AllResources.ITEMS.path:
     #             match parts:
     #                 case 1:
@@ -335,7 +345,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
     #                 case 1:
     #                     self.send_response_code(data_provider.fetch_client_pool().get_clients())
     #                 case 2:
-    #                     self.send_response_code(data_provider.fetch_client_pool().get_client(resource_id))     
+    #                     self.send_response_code(data_provider.fetch_client_pool().get_client(resource_id))
     #                 case 3:
     #                     if paths[2] == AllResources.ORDERS.path:
     #                         self.send_response_code(data_provider.fetch_order_pool().get_orders_for_client(resource_id))
@@ -356,7 +366,6 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
     #                     else:
     #                         self.send_response_code(data=[], status_code=404)
 
-            
     def do_GET(self):
         try:
             paths, user = self.validate_request("get")
@@ -365,108 +374,123 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             self.send_json(500)
 
+    def handle_post_version_1(self, paths: list[str], user: str | None):
+        key_delen = []
 
-    def handle_post_version_1(self, paths, user):
-        if paths[0] == "warehouses":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_warehouse = json.loads(post_data.decode())
-            data_provider.fetch_warehouse_pool().add_warehouse(new_warehouse)
-            data_provider.fetch_warehouse_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "locations":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_location = json.loads(post_data.decode())
-            data_provider.fetch_location_pool().add_location(new_location)
-            data_provider.fetch_location_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "transfers":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_transfer = json.loads(post_data.decode())
-            data_provider.fetch_transfer_pool().add_transfer(new_transfer)
-            data_provider.fetch_transfer_pool().save()
-            notification_processor.push(f"Scheduled batch transfer {new_transfer['id']}")
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "items":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_item = json.loads(post_data.decode())
-            data_provider.fetch_item_pool().add_item(new_item)
-            data_provider.fetch_item_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "item_lines":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_item_line = json.loads(post_data.decode())
-            data_provider.fetch_item_line_pool().add_item_line(new_item_line)
-            data_provider.fetch_item_line_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "item_groups":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_item_group = json.loads(post_data.decode())
-            data_provider.fetch_item_group_pool().add_item_group(new_item_group)
-            data_provider.fetch_item_group_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "item_types":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_item_type = json.loads(post_data.decode())
-            data_provider.fetch_item_type_pool().add_item_type(new_item_type)
-            data_provider.fetch_item_type_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "inventories":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_inventory = json.loads(post_data.decode())
-            data_provider.fetch_inventory_pool().add_inventory(new_inventory)
-            data_provider.fetch_inventory_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "suppliers":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_supplier = json.loads(post_data.decode())
-            data_provider.fetch_supplier_pool().add_supplier(new_supplier)
-            data_provider.fetch_supplier_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "orders":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_order = json.loads(post_data.decode())
-            data_provider.fetch_order_pool().add_order(new_order)
-            data_provider.fetch_order_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "clients":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_client = json.loads(post_data.decode())
-            data_provider.fetch_client_pool().add_client(new_client)
-            data_provider.fetch_client_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        elif paths[0] == "shipments":
-            content_length = int(self.headers["Content-Length"])
-            post_data = self.rfile.read(content_length)
-            new_shipment = json.loads(post_data.decode())
-            data_provider.fetch_shipment_pool().add_shipment(new_shipment)
-            data_provider.fetch_shipment_pool().save()
-            self.send_response(201)
-            self.end_headers()
-        else:
-            self.send_response(404)
-            self.end_headers()
+        for part in enumerate(paths):
+            key_delen.append(part)
+
+        key = tuple(key_delen)
+
+        route = self.POST_FUNCTIONS.get(key)
+        if route == None:
+            self.send_json(data=[], status_code=404)
+            return
+
+        result = route(self.read_json())
+        self.send_json(201, result)
+
+    # def handle_post_version_1(self, paths, user):
+    #     if paths[0] == "warehouses":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_warehouse = json.loads(post_data.decode())
+    #         data_provider.fetch_warehouse_pool().add_warehouse(new_warehouse)
+    #         data_provider.fetch_warehouse_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "locations":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_location = json.loads(post_data.decode())
+    #         data_provider.fetch_location_pool().add_location(new_location)
+    #         data_provider.fetch_location_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "transfers":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_transfer = json.loads(post_data.decode())
+    #         data_provider.fetch_transfer_pool().add_transfer(new_transfer)
+    #         data_provider.fetch_transfer_pool().save()
+    #         notification_processor.push(f"Scheduled batch transfer {new_transfer['id']}")
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "items":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_item = json.loads(post_data.decode())
+    #         data_provider.fetch_item_pool().add_item(new_item)
+    #         data_provider.fetch_item_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "item_lines":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_item_line = json.loads(post_data.decode())
+    #         data_provider.fetch_item_line_pool().add_item_line(new_item_line)
+    #         data_provider.fetch_item_line_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "item_groups":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_item_group = json.loads(post_data.decode())
+    #         data_provider.fetch_item_group_pool().add_item_group(new_item_group)
+    #         data_provider.fetch_item_group_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "item_types":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_item_type = json.loads(post_data.decode())
+    #         data_provider.fetch_item_type_pool().add_item_type(new_item_type)
+    #         data_provider.fetch_item_type_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "inventories":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_inventory = json.loads(post_data.decode())
+    #         data_provider.fetch_inventory_pool().add_inventory(new_inventory)
+    #         data_provider.fetch_inventory_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "suppliers":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_supplier = json.loads(post_data.decode())
+    #         data_provider.fetch_supplier_pool().add_supplier(new_supplier)
+    #         data_provider.fetch_supplier_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "orders":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_order = json.loads(post_data.decode())
+    #         data_provider.fetch_order_pool().add_order(new_order)
+    #         data_provider.fetch_order_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "clients":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_client = json.loads(post_data.decode())
+    #         data_provider.fetch_client_pool().add_client(new_client)
+    #         data_provider.fetch_client_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     elif paths[0] == "shipments":
+    #         content_length = int(self.headers["Content-Length"])
+    #         post_data = self.rfile.read(content_length)
+    #         new_shipment = json.loads(post_data.decode())
+    #         data_provider.fetch_shipment_pool().add_shipment(new_shipment)
+    #         data_provider.fetch_shipment_pool().save()
+    #         self.send_response(201)
+    #         self.end_headers()
+    #     else:
+    #         self.send_response(404)
+    #         self.end_headers()
 
     def do_POST(self):
         try:
@@ -482,7 +506,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             updated_warehouse = json.loads(post_data.decode())
-            data_provider.fetch_warehouse_pool().update_warehouse(warehouse_id, updated_warehouse)
+            data_provider.fetch_warehouse_pool().update_warehouse(
+                warehouse_id, updated_warehouse)
             data_provider.fetch_warehouse_pool().save()
             self.send_response(200)
             self.end_headers()
@@ -518,15 +543,19 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                             item_id = x["item_id"]
                             amount = x["amount"]
                             # decrease on-hand at the source location
-                            src = inventory_pool.get_inventory(item_id, from_location_id)
+                            src = inventory_pool.get_inventory(
+                                item_id, from_location_id)
                             if src is not None:
                                 src["quantity_on_hand"] -= amount
-                                inventory_pool.update_inventory(item_id, from_location_id, src)
+                                inventory_pool.update_inventory(
+                                    item_id, from_location_id, src)
                             # increase (or create) on-hand at the destination location
-                            dst = inventory_pool.get_inventory(item_id, to_location_id)
+                            dst = inventory_pool.get_inventory(
+                                item_id, to_location_id)
                             if dst is not None:
                                 dst["quantity_on_hand"] += amount
-                                inventory_pool.update_inventory(item_id, to_location_id, dst)
+                                inventory_pool.update_inventory(
+                                    item_id, to_location_id, dst)
                             else:
                                 inventory_pool.add_inventory({
                                     "item_id": item_id,
@@ -539,7 +568,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         transfer["transfer_status"] = "Processed"
                         transfer.pop("items", None)
                         data_provider.fetch_transfer_pool().update_transfer(transfer_id, transfer)
-                        notification_processor.push(f"Processed batch transfer with id:{transfer['id']}")
+                        notification_processor.push(
+                            f"Processed batch transfer with id:{transfer['id']}")
                         data_provider.fetch_transfer_pool().save()
                         data_provider.fetch_inventory_pool().save()
                         self.send_response(200)
@@ -564,7 +594,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             updated_item_line = json.loads(post_data.decode())
-            data_provider.fetch_item_line_pool().update_item_line(item_line_id, updated_item_line)
+            data_provider.fetch_item_line_pool().update_item_line(
+                item_line_id, updated_item_line)
             data_provider.fetch_item_line_pool().save()
             self.send_response(200)
             self.end_headers()
@@ -573,7 +604,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             updated_item_group = json.loads(post_data.decode())
-            data_provider.fetch_item_group_pool().update_item_group(item_group_id, updated_item_group)
+            data_provider.fetch_item_group_pool().update_item_group(
+                item_group_id, updated_item_group)
             data_provider.fetch_item_group_pool().save()
             self.send_response(200)
             self.end_headers()
@@ -582,7 +614,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             updated_item_type = json.loads(post_data.decode())
-            data_provider.fetch_item_type_pool().update_item_type(item_type_id, updated_item_type)
+            data_provider.fetch_item_type_pool().update_item_type(
+                item_type_id, updated_item_type)
             data_provider.fetch_item_type_pool().save()
             self.send_response(200)
             self.end_headers()
@@ -655,7 +688,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         content_length = int(self.headers["Content-Length"])
                         post_data = self.rfile.read(content_length)
                         updated_orders = json.loads(post_data.decode())
-                        data_provider.fetch_shipment_pool().update_orders_in_shipment(shipment_id, updated_orders)
+                        data_provider.fetch_shipment_pool().update_orders_in_shipment(
+                            shipment_id, updated_orders)
                         data_provider.fetch_shipment_pool().save()
                         self.send_response(200)
                         self.end_headers()
@@ -664,7 +698,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                         content_length = int(self.headers["Content-Length"])
                         post_data = self.rfile.read(content_length)
                         updated_items = json.loads(post_data.decode())
-                        data_provider.fetch_shipment_pool().update_items_in_shipment(shipment_id, updated_items)
+                        data_provider.fetch_shipment_pool().update_items_in_shipment(
+                            shipment_id, updated_items)
                         data_provider.fetch_shipment_pool().save()
                         self.send_response(200)
                         self.end_headers()
@@ -689,14 +724,14 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
     def handle_delete_version_1(self, paths, user):
         # Issue #39 oplossen: Als er geen ID is meegegeven (padlengte 1), is het een collectie
         if len(paths) == 1:
-            return self.send_json(405) # 405 Method Not Allowed
-            
+            return self.send_json(405)  # 405 Method Not Allowed
+
         resource = paths[0]
-        
+
         # Inventories mogen niet verwijderd worden via ID
         if resource == "inventories":
             return self.send_json(404)
-            
+
         delete_action = self.DELETE_FUNCTIONS.get(resource)
         if delete_action is None:
             return self.send_json(404)
@@ -705,8 +740,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             resource_id = int(paths[1])
         except ValueError:
             # 500-crash voorkomen bij string ID's
-            return self.send_json(400) 
-            
+            return self.send_json(400)
+
         # Voer de verwijder-actie en save() uit
         delete_action(resource_id)
         self.send_json(200)
@@ -792,6 +827,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_delete_version_1(paths, user)
         except Exception:
             self.send_json(500)
+
 
 if __name__ == "__main__":
     PORT = 3000
