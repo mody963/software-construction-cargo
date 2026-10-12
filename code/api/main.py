@@ -81,66 +81,67 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(data).encode("utf-8"))
 
 # alle losse functions die er zijn om zo de elif  evt weg te kunne halen. 
-    GET_FUNCTIONS = [
+    GET_FUNCTIONS = {
     # warehouses
-    "get_warehouses",
-    "get_warehouse",
-    "get_locations_in_warehouse",
+        ("warehouses",): lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouses(),
+        ("warehouses", "id"):  lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouse(id),
+        ("warehouses", "id", "locations"): lambda resource_id: data_provider.fetch_location_pool().get_locations_in_warehouse(id),
 
     # locations
-    "get_locations",
-    "get_location",
+        ("locations",): lambda resource_id: data_provider.fetch_location_pool().get_locations(),
+        ("locations", "id"): lambda resource_id: data_provider.fetch_location_pool().get_location(id),
 
     # transfers
-    "get_transfers",
-    "get_transfer",
-    "get_items_in_transfer",
+        ("transfers",): lambda resource_id: data_provider.fetch_transfer_pool().get_transfers(),
+        ("transfers", "id"):  lambda id: data_provider.fetch_transfer_pool().get_transfer(id),
+        ("transfers", "id", "items"): lambda id: data_provider.fetch_transfer_pool().get_items_in_transfer(id),
 
     # items
-    "get_items",
-    "get_item",
-    "get_inventories_for_item",
-    "get_inventory_totals_for_item",
+        ("items",): lambda resource_id: data_provider.fetch_item_pool().get_items(),
+        ("items", "id"): lambda resource_id: data_provider.fetch_item_pool().get_item(id),
+        ("items", "id", "inventory"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventories_for_item(id),
+        ("items", "id", "inventory", "totals"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventory_totals_for_item(id),
+
 
     # item_lines
-    "get_item_lines",
-    "get_item_line",
-    "get_items_for_item_line",
+        ("item_lines",):lambda resource_id: data_provider.fetch_item_line_pool().get_item_lines(),
+        ("item_lines", "id"):lambda resource_id: data_provider.fetch_item_line_pool().get_item_line(id),
+        ("item_lines", "id", "items"):lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_line(id),
 
     # item_groups
-    "get_item_groups",
-    "get_item_group",
-    "get_items_for_item_group",
+        ("item_groups",):lambda resource_id: data_provider.fetch_item_group_pool().get_item_groups(),
+        ("item_groups", "id"):   lambda resource_id: data_provider.fetch_item_group_pool().get_item_group(id),
+        ("item_groups", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_group(id),
 
     # item_types
-    "get_item_types",
-    "get_item_type",
-    "get_items_for_item_type",
+        ("item_types",): lambda resource_id: data_provider.fetch_item_type_pool().get_item_types(),
+        ("item_types", "id"): lambda resource_id: data_provider.fetch_item_type_pool().get_item_type(id),
+        ("item_types", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_type(id),
 
     # inventories
-    "get_inventories",
+        ("inventories",):lambda resource_id: data_provider.fetch_inventory_pool().get_inventories(),
 
     # suppliers
-    "get_suppliers",
-    "get_supplier",
-    "get_items_for_supplier",
+        ("suppliers",):lambda resource_id: data_provider.fetch_supplier_pool().get_suppliers(),
+        ("suppliers", "id"):lambda resource_id: data_provider.fetch_supplier_pool().get_supplier(id),
+        ("suppliers", "id", "items"):lambda resource_id: data_provider.fetch_item_pool().get_items_for_supplier(id),
 
     # orders
-    "get_orders",
-    "get_order",
-    "get_items_in_order",
+        ("orders",):lambda resource_id: data_provider.fetch_order_pool().get_orders(),
+        ("orders", "id"):lambda resource_id: data_provider.fetch_order_pool().get_order(id),
+        ("orders", "id", "items"):lambda resource_id: data_provider.fetch_order_pool().get_items_in_order(id),
 
     # clients
-    "get_clients",
-    "get_client",
-    "get_orders_for_client",
+        ("clients",):lambda resource_id: data_provider.fetch_client_pool().get_clients(),
+        ("clients", "id"):lambda resource_id: data_provider.fetch_client_pool().get_client(id),
+        ("clients", "id", "orders"):lambda resource_id: data_provider.fetch_order_pool().get_orders_for_client(id),
 
     # shipments
-    "get_shipments",
-    "get_shipment",
-    "get_order_ids_in_shipment",
-    "get_items_in_shipment",
-    ]
+        ("shipments",):lambda resource_id: data_provider.fetch_shipment_pool().get_shipments(),
+        ("shipments", "id"):lambda resource_id: data_provider.fetch_shipment_pool().get_shipment(id),
+        ("shipments", "id", "orders"):lambda resource_id: data_provider.fetch_shipment_pool().get_order_ids_in_shipment(id),
+        ("shipments", "id", "items"):lambda resource_id: data_provider.fetch_shipment_pool().get_items_in_shipment(id),
+    }
 
 
 
