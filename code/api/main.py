@@ -143,9 +143,45 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         ("shipments", "id", "items"):lambda resource_id: data_provider.fetch_shipment_pool().get_items_in_shipment(id),
     }
 
+    def handle_get_version_1(self, paths: list[str], user: str | None):
+        key_delen = []
 
+        for index, part in enumerate(paths):
+            if index == 1:
+                key_delen.append("id")
+            else:
+                key_delen.append(part)
 
-    def handle_get_version_1(self, paths: list[str], user: str |None):
+        key = tuple(key_delen)
+
+        route = self.GET_FUNCTIONS.get(key)
+        if route == None:
+            self.send_response_code(data=[], status_code=404)
+            return 
+
+        resource_id = None
+
+        if len(paths) > 1:
+            try: 
+                resource_id = int(paths[1])
+            except Exception as e:
+                self.send_response(400)
+                self.end_headers()
+                return 
+            
+        if resource_id == None:
+            result = route(resource_id)
+            self.send_response_code(result)
+
+        else:
+            result = route(resource_id)
+            self.send_response_code(result)
+            
+        
+
+        
+
+    def handle_get_version_2(self, paths: list[str], user: str |None):
         parts= len(paths)
 
         if paths[0] not in [resource.value for resource in AllResources]:
