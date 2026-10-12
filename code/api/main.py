@@ -176,179 +176,177 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         else:
             result = route(resource_id)
             self.send_response_code(result)
-            
-        
-
-        
-
-    def handle_get_version_2(self, paths: list[str], user: str |None):
-        parts= len(paths)
-
-        if paths[0] not in [resource.value for resource in AllResources]:
-            self.send_response(404)
-            self.end_headers()
 
 
-        # losse kijk of de case groter is dan de algemene lengte die het kan hebben mbv de enum
-        resource = next((resource for resource in AllResources if resource.path == paths[0]),None)
-        if resource is None or parts > resource.max_path_length:
-            self.send_response(404)
-            self.end_headers()
-            return
 
-        else:
+    # def handle_get_version_2(self, paths: list[str], user: str |None):
+    #     parts= len(paths)
 
-            if parts > 1:
-                try:
-                    resource_id = int(paths[1])
-                except ValueError:
-                    self.send_response(400)
-                    self.end_headers()
-                    return
+    #     if paths[0] not in [resource.value for resource in AllResources]:
+    #         self.send_response(404)
+    #         self.end_headers()
 
-            if paths[0] == AllResources.WAREHOUSES.path:
-                match parts:
-                    case 1:
-                        # uiteindelijk nog een statement maken om te kijken of het wel iets returned idd, zoniet dan andere statuscode (204
-                        self.send_response_code(data_provider.fetch_warehouse_pool().get_warehouses())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_warehouse_pool().get_warehouse(resource_id))
-                    case 3:
-                        if paths[2] == AllResources.LOCATIONS.path:
-                            self.send_response_code(data_provider.fetch_location_pool().get_locations_in_warehouse(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
 
-            elif paths[0] == AllResources.LOCATIONS.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_location_pool().get_locations())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_location_pool().get_location(resource_id))
+    #     # losse kijk of de case groter is dan de algemene lengte die het kan hebben mbv de enum
+    #     resource = next((resource for resource in AllResources if resource.path == paths[0]),None)
+    #     if resource is None or parts > resource.max_path_length:
+    #         self.send_response(404)
+    #         self.end_headers()
+    #         return
 
-            elif paths[0] == AllResources.TRANSFERS.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_transfer_pool().get_transfers())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_transfer_pool().get_transfer(resource_id))
-                    case 3:
-                        if paths[2] == AllResources.ITEMS.path:
-                            self.send_response_code(data_provider.fetch_transfer_pool().get_items_in_transfer(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
+    #     else:
+
+    #         if parts > 1:
+    #             try:
+    #                 resource_id = int(paths[1])
+    #             except ValueError:
+    #                 self.send_response(400)
+    #                 self.end_headers()
+    #                 return
+
+    #         if paths[0] == AllResources.WAREHOUSES.path:
+    #             match parts:
+    #                 case 1:
+    #                     # uiteindelijk nog een statement maken om te kijken of het wel iets returned idd, zoniet dan andere statuscode (204
+    #                     self.send_response_code(data_provider.fetch_warehouse_pool().get_warehouses())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_warehouse_pool().get_warehouse(resource_id))
+    #                 case 3:
+    #                     if paths[2] == AllResources.LOCATIONS.path:
+    #                         self.send_response_code(data_provider.fetch_location_pool().get_locations_in_warehouse(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
+
+    #         elif paths[0] == AllResources.LOCATIONS.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_location_pool().get_locations())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_location_pool().get_location(resource_id))
+
+    #         elif paths[0] == AllResources.TRANSFERS.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_transfer_pool().get_transfers())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_transfer_pool().get_transfer(resource_id))
+    #                 case 3:
+    #                     if paths[2] == AllResources.ITEMS.path:
+    #                         self.send_response_code(data_provider.fetch_transfer_pool().get_items_in_transfer(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
                     
-            elif paths[0] == AllResources.ITEMS.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_item_pool().get_items())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_item_pool().get_item(resource_id))
-                    case 3:
-                        if paths[2] == AllResources.INVENTORY.path:
-                            self.send_response_code(data_provider.fetch_inventory_pool().get_inventories_for_item(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
-                    case 4:
-                        if paths[2] == AllResources.INVENTORY.path and paths[3] == AllResources.TOTALS.path:
-                            self.send_response_code(data_provider.fetch_inventory_pool().get_inventory_totals_for_item(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
+    #         elif paths[0] == AllResources.ITEMS.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_item_pool().get_items())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_item_pool().get_item(resource_id))
+    #                 case 3:
+    #                     if paths[2] == AllResources.INVENTORY.path:
+    #                         self.send_response_code(data_provider.fetch_inventory_pool().get_inventories_for_item(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
+    #                 case 4:
+    #                     if paths[2] == AllResources.INVENTORY.path and paths[3] == AllResources.TOTALS.path:
+    #                         self.send_response_code(data_provider.fetch_inventory_pool().get_inventory_totals_for_item(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
 
-            elif paths[0] == AllResources.ITEM_LINES.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_item_line_pool().get_item_lines())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_item_line_pool().get_item_line(resource_id))
-                    case 3:
-                        if paths[2] == AllResources.ITEMS.path:
-                            self.send_response_code(data_provider.fetch_item_pool().get_items_for_item_line(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
+    #         elif paths[0] == AllResources.ITEM_LINES.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_item_line_pool().get_item_lines())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_item_line_pool().get_item_line(resource_id))
+    #                 case 3:
+    #                     if paths[2] == AllResources.ITEMS.path:
+    #                         self.send_response_code(data_provider.fetch_item_pool().get_items_for_item_line(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
 
-            elif paths[0] == AllResources.ITEM_GROUPS.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_item_group_pool().get_item_groups())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_item_group_pool().get_item_group(resource_id))
-                    case 3:
-                        if paths[2] == AllResources.ITEMS.path:
-                            self.send_response_code(data_provider.fetch_item_pool().get_items_for_item_group(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
+    #         elif paths[0] == AllResources.ITEM_GROUPS.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_item_group_pool().get_item_groups())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_item_group_pool().get_item_group(resource_id))
+    #                 case 3:
+    #                     if paths[2] == AllResources.ITEMS.path:
+    #                         self.send_response_code(data_provider.fetch_item_pool().get_items_for_item_group(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
 
-            elif paths[0] == AllResources.ITEM_TYPES.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_item_type_pool().get_item_types())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_item_type_pool().get_item_type(resource_id))
-                    case 3:
-                        if paths[2] == AllResources.ITEMS.path:
-                            self.send_response_code(data_provider.fetch_item_pool().get_items_for_item_type(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
+    #         elif paths[0] == AllResources.ITEM_TYPES.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_item_type_pool().get_item_types())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_item_type_pool().get_item_type(resource_id))
+    #                 case 3:
+    #                     if paths[2] == AllResources.ITEMS.path:
+    #                         self.send_response_code(data_provider.fetch_item_pool().get_items_for_item_type(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
 
-            elif paths[0] == AllResources.INVENTORIES.value:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_inventory_pool().get_inventories())
-                    case 2:
-                        # Inventory rows are keyed on a composite (item_id, location_id)
-                        # in the new schema, so a single surrogate id has no meaning.
-                        self.send_response_code(data=[], status_code=404)
+    #         elif paths[0] == AllResources.INVENTORIES.value:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_inventory_pool().get_inventories())
+    #                 case 2:
+    #                     # Inventory rows are keyed on a composite (item_id, location_id)
+    #                     # in the new schema, so a single surrogate id has no meaning.
+    #                     self.send_response_code(data=[], status_code=404)
 
-            elif paths[0] == AllResources.SUPPLIERS.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_supplier_pool().get_suppliers())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_supplier_pool().get_supplier(resource_id))
-                    case 3:
-                        if paths[2] == AllResources.ITEMS.path:
-                            self.send_response_code(data_provider.fetch_item_pool().get_items_for_supplier(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
+    #         elif paths[0] == AllResources.SUPPLIERS.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_supplier_pool().get_suppliers())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_supplier_pool().get_supplier(resource_id))
+    #                 case 3:
+    #                     if paths[2] == AllResources.ITEMS.path:
+    #                         self.send_response_code(data_provider.fetch_item_pool().get_items_for_supplier(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
 
-            elif paths[0] == AllResources.ORDERS.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_order_pool().get_orders())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_order_pool().get_order(resource_id))
-                    case 3:
-                        if paths[2] == AllResources.ITEMS.path:
-                            self.send_response_code(data_provider.fetch_order_pool().get_items_in_order(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
+    #         elif paths[0] == AllResources.ORDERS.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_order_pool().get_orders())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_order_pool().get_order(resource_id))
+    #                 case 3:
+    #                     if paths[2] == AllResources.ITEMS.path:
+    #                         self.send_response_code(data_provider.fetch_order_pool().get_items_in_order(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
 
-            elif paths[0] == AllResources.CLIENTS.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_client_pool().get_clients())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_client_pool().get_client(resource_id))     
-                    case 3:
-                        if paths[2] == AllResources.ORDERS.path:
-                            self.send_response_code(data_provider.fetch_order_pool().get_orders_for_client(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
+    #         elif paths[0] == AllResources.CLIENTS.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_client_pool().get_clients())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_client_pool().get_client(resource_id))     
+    #                 case 3:
+    #                     if paths[2] == AllResources.ORDERS.path:
+    #                         self.send_response_code(data_provider.fetch_order_pool().get_orders_for_client(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
 
-            elif paths[0] == AllResources.SHIPMENTS.path:
-                match parts:
-                    case 1:
-                        self.send_response_code(data_provider.fetch_shipment_pool().get_shipments())
-                    case 2:
-                        self.send_response_code(data_provider.fetch_shipment_pool().get_shipment(resource_id))
-                    case 3:
-                        if paths[2] == AllResources.ORDERS.path:
-                            self.send_response_code(data_provider.fetch_shipment_pool().get_order_ids_in_shipment(resource_id))
-                        elif paths[2] == AllResources.ITEMS.path:
-                            self.send_response_code(data_provider.fetch_shipment_pool().get_items_in_shipment(resource_id))
-                        else:
-                            self.send_response_code(data=[], status_code=404)
+    #         elif paths[0] == AllResources.SHIPMENTS.path:
+    #             match parts:
+    #                 case 1:
+    #                     self.send_response_code(data_provider.fetch_shipment_pool().get_shipments())
+    #                 case 2:
+    #                     self.send_response_code(data_provider.fetch_shipment_pool().get_shipment(resource_id))
+    #                 case 3:
+    #                     if paths[2] == AllResources.ORDERS.path:
+    #                         self.send_response_code(data_provider.fetch_shipment_pool().get_order_ids_in_shipment(resource_id))
+    #                     elif paths[2] == AllResources.ITEMS.path:
+    #                         self.send_response_code(data_provider.fetch_shipment_pool().get_items_in_shipment(resource_id))
+    #                     else:
+    #                         self.send_response_code(data=[], status_code=404)
 
             
     def do_GET(self):
