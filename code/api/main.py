@@ -403,11 +403,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_response_code(data=[], status_code=404)
             return
 
-        content_length = int(self.headers["Content-Length"])
-        post_data = self.rfile.read(content_length)
-        new_resource = json.loads(post_data.decode())
-
-        result = route(new_resource)
+        result = route(self.read_json())
         self.send_response_code(result)
         self.end_headers()
 
