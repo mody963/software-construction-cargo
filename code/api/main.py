@@ -46,7 +46,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         if data is not None:
             self.wfile.write(json.dumps(data).encode("utf-8"))
 
-    def read_json(self):
+# leest de mee gegeven json body
+    def read_json_body(self):
         content_length = int(self.headers.get("Content-Length", 0))
         post_data = self.rfile.read(content_length)
         return json.loads(post_data.decode())
@@ -554,7 +555,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_json(data=[], status_code=404)
             return
 
-        result = route(self.read_json())
+        result = route(self.read_json_body())
         self.send_json(201, result)
 
     # def handle_post_version_1(self, paths, user):
@@ -699,7 +700,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             return
 
         try:
-            updated_resource = self.read_json()
+            updated_resource = self.read_json_body()
         except (json.JSONDecodeError, UnicodeDecodeError):
             self.send_json(400)
             return
