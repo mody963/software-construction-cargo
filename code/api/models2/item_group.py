@@ -1,4 +1,4 @@
-class Item_Group:
+class ItemGroup:
     def __init__(
             self,
             id: int,
