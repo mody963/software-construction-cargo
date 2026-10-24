@@ -4,9 +4,37 @@ import json
 
 from providers import auth_provider
 from providers import data_provider
+
 from processors import notification_processor
 
 
+from enum import Enum
+
+
+class AllResources(Enum):
+    """All resources and their maximum path lengths."""
+
+    # Main resources
+    WAREHOUSES = ("warehouses", 3)
+    LOCATIONS = ("locations", 2)
+    TRANSFERS = ("transfers", 3)
+    ITEMS = ("items", 4)
+    ITEM_LINES = ("item_lines", 3)
+    ITEM_GROUPS = ("item_groups", 3)
+    ITEM_TYPES = ("item_types", 3)
+    INVENTORIES = ("inventories", 2)
+    SUPPLIERS = ("suppliers", 3)
+    ORDERS = ("orders", 3)
+    CLIENTS = ("clients", 3)
+    SHIPMENTS = ("shipments", 3)
+
+    # Sub-resources
+    INVENTORY = ("inventory", 1)
+    TOTALS = ("totals", 1)
+
+    def __init__(self, path: str, max_path_length: int):
+        self.path = path
+        self.max_path_length = max_path_length
 
 
 class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
