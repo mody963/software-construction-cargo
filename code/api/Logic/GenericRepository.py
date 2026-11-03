@@ -4,8 +4,9 @@ import os
 
 from dataclasses import asdict, is_dataclass
 from typing import Generic, Optional, Type, TypeVar
-# om type t te gebruiken in python moet je de type en typevar hebben om zo type t aan te maken. 
-# optional geeft aan dat iets ook none zou kennen zijn. 
+
+# om type t te gebruiken in python moet je de type en typevar hebben om zo type t aan te maken.
+# optional geeft aan dat iets ook none zou kennen zijn.
 
 T = TypeVar("T")
 
@@ -15,22 +16,31 @@ class GenericRepository(Generic[T]):
     def __init__(self, file_path: str, model: Type[T], key_fields: tuple = ("id",), debug: bool = False):
         self.file_path = file_path
         self.model = model
-        self.key_fields = key_fields # stel je moet net als bij inventory zoeken op item_id en locaion_id dan noem je dat een composite key. 
+        self.key_fields = key_fields
+        # stel je moet net als bij inventory zoeken op item_id en location_id dan noem je dat een composite key.
         self.debug = debug
 
-        self.data = self.load()
+        self.data = self.load() 
+# hierdoor niet constant opnieuw de code te openen, gewoon 1x bij het aanroepen, 
+# deze kan e dan gwn meteen pakkeb bij de all en dan hoef je het niet opnieuw af te lezen en aan te roepen, cashings onderdeel.  
+
+
 
     def load(self) -> list[T]:
         if not os.path.exists(self.file_path):
             return []
 
         with open(self.file_path, "r", encoding="utf-8") as file:
-            records = json.load(file)
+            records: list[dict[str, object]] = json.load(file)
 
         return [self.model(**record) for record in records]
 
+
+#
     def get_all(self) -> list[T]:
-        return self.data
+        return self.data # hierbij dus die cashing aangeroepen. 
+
+
 
     def get_by_id(self, *key_values) -> Optional[T]:
         if len(key_values) != len(self.key_fields):
@@ -79,24 +89,34 @@ class GenericRepository(Generic[T]):
 
         return False
 
+    
     def save(self):
         records = []
 
         for item in self.data:
-            if is_dataclass(item):
+            if is_dataclass(item) and not isinstance(item, type):
                 records.append(asdict(item))
+
             elif hasattr(item, "__dict__"):
                 records.append(item.__dict__)
+
             else:
                 raise TypeError(
                     f"Model {self.model.__name__} cannot be converted to JSON."
                 )
+
+        # Zorg dat de directory bestaat voordat het bestand wordt opgeslagen.
+        directory = os.path.dirname(self.file_path)
+
+        if directory:
+            os.makedirs(directory, exist_ok=True)
 
         with open(self.file_path, "w", encoding="utf-8") as file:
             json.dump(records, file, indent=4, default=str)
 
         if self.debug:
             print(f"Saved data to {self.file_path}")
+
 
     def _matches(self, item: T, key_values: tuple) -> bool:
         for index, field in enumerate(self.key_fields):
