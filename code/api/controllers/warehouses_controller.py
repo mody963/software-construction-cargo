@@ -10,7 +10,10 @@ class WarehousesController:
     }
 
     POST_FUNCTIONS = {
-            ("warehouses",): lambda resource: data_provider.fetch_warehouse_pool().add_warehouse(resource)
+            ("warehouses",): lambda resource: (
+                data_provider.fetch_warehouse_pool().add_warehouse(resource),
+                data_provider.fetch_warehouse_pool().save()
+            )
     }
     
     PUT_FUNCTIONS = {

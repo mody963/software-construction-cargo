@@ -1,4 +1,5 @@
 from providers import data_provider
+from processors import notification_processor
 
 
 class TransfersController:
@@ -10,7 +11,7 @@ class TransfersController:
     }
 
     POST_FUNCTIONS = {
-            ("transfers",): lambda resource: data_provider.fetch_transfer_pool().add_transfer(resource)
+            ("transfers",): lambda resource: _add_transfer(resource)
     }
     
     PUT_FUNCTIONS = {
@@ -25,5 +26,12 @@ class TransfersController:
     DELETE_FUNCTIONS = {
             "transfers": lambda id: (data_provider.fetch_transfer_pool().remove_transfer(id), data_provider.fetch_transfer_pool().save())
     }
+
+
+def _add_transfer(resource):
+    transfer_pool = data_provider.fetch_transfer_pool()
+    transfer_pool.add_transfer(resource)
+    transfer_pool.save()
+    notification_processor.push(f"Scheduled batch transfer {resource['id']}")
 
 

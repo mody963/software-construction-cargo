@@ -9,7 +9,10 @@ class LocationsController:
         }
 
     POST_FUNCTIONS = {
-            ("locations",): lambda resource: data_provider.fetch_location_pool().add_location(resource)
+            ("locations",): lambda resource: (
+                data_provider.fetch_location_pool().add_location(resource),
+                data_provider.fetch_location_pool().save()
+            )
         }
     
     PUT_FUNCTIONS = {

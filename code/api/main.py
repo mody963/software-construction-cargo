@@ -1,51 +1,43 @@
 import socketserver
 import http.server
 import json
+from urllib.parse import urlsplit
 
 from providers import auth_provider
-from providers import data_provider
-
 from processors import notification_processor
-
 from helpers import validator
+from controllers import (
+    WarehousesController,
+    LocationsController,
+    TransfersController,
+    ItemsController,
+    Item_linesController,
+    Item_groupsController,
+    Item_typesController,
+    InventoriesController,
+    SuppliersController,
+    OrdersController,
+    ClientsController,
+    ShipmentsController
+)
+from services import transfer_service
 
-from services import delete_service
-from services import put_service
-from services import post_service
-from services import get_services
-
-
-from enum import Enum
-
-
-class AllResources(Enum):
-    """All resources and their maximum path lengths."""
-
-    # Main resources
-    WAREHOUSES = ("warehouses", 3)
-    LOCATIONS = ("locations", 2)
-    TRANSFERS = ("transfers", 3)
-    ITEMS = ("items", 4)
-    ITEM_LINES = ("item_lines", 3)
-    ITEM_GROUPS = ("item_groups", 3)
-    ITEM_TYPES = ("item_types", 3)
-    INVENTORIES = ("inventories", 2)
-    SUPPLIERS = ("suppliers", 3)
-    ORDERS = ("orders", 3)
-    CLIENTS = ("clients", 3)
-    SHIPMENTS = ("shipments", 3)
-
-    # Sub-resources
-    INVENTORY = ("inventory", 1)
-    TOTALS = ("totals", 1)
-
-    def __init__(self, path: str, max_path_length: int):
-        self.path = path
-        self.max_path_length = max_path_length
-
+CONTROLLERS = {
+    "warehouses": WarehousesController,
+    "locations": LocationsController,
+    "transfers": TransfersController,
+    "items": ItemsController,
+    "item_lines": Item_linesController,
+    "item_groups": Item_groupsController,
+    "item_types": Item_typesController,
+    "inventories": InventoriesController,
+    "suppliers": SuppliersController,
+    "orders": OrdersController,
+    "clients": ClientsController,
+    "shipments": ShipmentsController
+}
 
 class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
-
     def send_json(self, status_code, data=None):
         self.send_response(status_code)
         self.send_header("Content-type", "application/json")
@@ -53,7 +45,6 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         if data is not None:
             self.wfile.write(json.dumps(data).encode("utf-8"))
 
-# leest de mee gegeven json body
     def read_json_body(self):
         content_length = int(self.headers.get("Content-Length", 0))
         post_data = self.rfile.read(content_length)
@@ -67,9 +58,12 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_json(401)
             return None, None
 
-        paths = self.path.split("/")
-        if len(paths) > 3 and paths[1] == "api" and paths[2] == "v1":
-            resource_paths = paths[3:]
+        path_parts = urlsplit(self.path).path.strip("/").split("/")
+        if len(path_parts) >= 3 and path_parts[:2] == ["api", "v1"]:
+            resource_paths = path_parts[2:]
+            if not resource_paths or not resource_paths[0]:
+                self.send_json(404)
+                return None, None
             # Check direct of de user rechten heeft voor dit specifieke pad en methode
             if not auth_provider.has_access(user, resource_paths, required_method):
                 self.send_json(403)
@@ -79,259 +73,100 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_json(404)
         return None, None
 
+    def dispatch_request(self, method: str, paths: list[str], user=None):
+        method = method.upper()
+        if method not in {"GET", "POST", "PUT", "DELETE"}:
+            return 405, None
+        if not paths:
+            return 404, None
 
-# alle losse functions die er zijn om zo de elif  evt weg te kunne halen.
-    GET_FUNCTIONS = {
-        # warehouses
-        ("warehouses",): lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouses(),
-        ("warehouses", "id"): lambda resource_id: data_provider.fetch_warehouse_pool().get_warehouse(resource_id),
-        ("warehouses", "id", "locations"): lambda resource_id: data_provider.fetch_location_pool().get_locations_in_warehouse(resource_id),
+        resource = paths[0]
+        controller = CONTROLLERS.get(resource)
+        if controller is None:
+            return 404, None
 
-        # locations
-        ("locations",): lambda resource_id: data_provider.fetch_location_pool().get_locations(),
-        ("locations", "id"): lambda resource_id: data_provider.fetch_location_pool().get_location(resource_id),
+        if method == "DELETE" and len(paths) == 1:
+            return 405, None
+        if method == "DELETE" and resource == "inventories":
+            return 404, None
 
-        # transfers
-        ("transfers",): lambda resource_id: data_provider.fetch_transfer_pool().get_transfers(),
-        ("transfers", "id"): lambda resource_id: data_provider.fetch_transfer_pool().get_transfer(resource_id),
-        ("transfers", "id", "items"): lambda resource_id: data_provider.fetch_transfer_pool().get_items_in_transfer(resource_id),
+        if method == "PUT" and resource == "transfers" and len(paths) == 3 and paths[2] == "commit":
+            try:
+                transfer_id = int(paths[1])
+            except ValueError:
+                return 400, {"error": "ID must be an integer"}
+            return transfer_service.handle_transfer_commit(self, transfer_id), None
 
-        # items
-        ("items",): lambda resource_id: data_provider.fetch_item_pool().get_items(),
-        ("items", "id"): lambda resource_id: data_provider.fetch_item_pool().get_item(resource_id),
-        ("items", "id", "inventory"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventories_for_item(resource_id),
-        ("items", "id", "inventory", "totals"): lambda resource_id: data_provider.fetch_inventory_pool().get_inventory_totals_for_item(resource_id),
+        functions = getattr(controller, f"{method}_FUNCTIONS", {})
+        selected_function = None
+        for route, function in functions.items():
+            if isinstance(route, str):
+                route = (route, "id") if method == "DELETE" else (route,)
+            if len(route) != len(paths):
+                continue
+            matches = all(
+                expected == actual or expected == "id"
+                for expected, actual in zip(route, paths)
+            )
+            if matches:
+                selected_function = function
+                break
+        if selected_function is None:
+            return 404, None
 
-        # item_lines
-        ("item_lines",): lambda resource_id: data_provider.fetch_item_line_pool().get_item_lines(),
-        ("item_lines", "id"): lambda resource_id: data_provider.fetch_item_line_pool().get_item_line(resource_id),
-        ("item_lines", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_line(resource_id),
+        resource_id = None
+        if len(paths) > 1:
+            try:
+                resource_id = int(paths[1])
+            except ValueError:
+                return 400, {"error": "ID must be an integer"}
 
-        # item_groups
-        ("item_groups",): lambda resource_id: data_provider.fetch_item_group_pool().get_item_groups(),
-        ("item_groups", "id"): lambda resource_id: data_provider.fetch_item_group_pool().get_item_group(resource_id),
-        ("item_groups", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_group(resource_id),
+        if method == "GET":
+            result = selected_function(resource_id)
+            return (404, None) if result is None else (200, result)
 
-        # item_types
-        ("item_types",): lambda resource_id: data_provider.fetch_item_type_pool().get_item_types(),
-        ("item_types", "id"): lambda resource_id: data_provider.fetch_item_type_pool().get_item_type(resource_id),
-        ("item_types", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_item_type(resource_id),
+        if method in {"POST", "PUT"}:
+            try:
+                payload = self.read_json_body()
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                return 400, {"error": "Invalid JSON format"}
 
-        # inventories
-        ("inventories",): lambda resource_id: data_provider.fetch_inventory_pool().get_inventories(),
+            if method == "POST" or len(paths) == 2:
+                is_valid, error_message = validator.validate_request_body(resource, payload)
+                if not is_valid:
+                    return 400, {"error": error_message}
 
-        # suppliers
-        ("suppliers",): lambda resource_id: data_provider.fetch_supplier_pool().get_suppliers(),
-        ("suppliers", "id"): lambda resource_id: data_provider.fetch_supplier_pool().get_supplier(resource_id),
-        ("suppliers", "id", "items"): lambda resource_id: data_provider.fetch_item_pool().get_items_for_supplier(resource_id),
+            if method == "POST":
+                selected_function(payload)
+                return 201, None
 
-        # orders
-        ("orders",): lambda resource_id: data_provider.fetch_order_pool().get_orders(),
-        ("orders", "id"): lambda resource_id: data_provider.fetch_order_pool().get_order(resource_id),
-        ("orders", "id", "items"): lambda resource_id: data_provider.fetch_order_pool().get_items_in_order(resource_id),
+            selected_function(resource_id, payload)
+            return 200, None
 
-        # clients
-        ("clients",): lambda resource_id: data_provider.fetch_client_pool().get_clients(),
-        ("clients", "id"): lambda resource_id: data_provider.fetch_client_pool().get_client(resource_id),
-        ("clients", "id", "orders"): lambda resource_id: data_provider.fetch_order_pool().get_orders_for_client(resource_id),
+        selected_function(resource_id)
+        return 200, None
 
-        # shipments
-        ("shipments",): lambda resource_id: data_provider.fetch_shipment_pool().get_shipments(),
-        ("shipments", "id"): lambda resource_id: data_provider.fetch_shipment_pool().get_shipment(resource_id),
-        ("shipments", "id", "orders"): lambda resource_id: data_provider.fetch_shipment_pool().get_order_ids_in_shipment(resource_id),
-        ("shipments", "id", "items"): lambda resource_id: data_provider.fetch_shipment_pool().get_items_in_shipment(resource_id),
-    }
-    PUT_FUNCTIONS = {
-        # warehouses
-        ("warehouses", "id"): lambda resource_id, updated_warehouse: (
-            data_provider.fetch_warehouse_pool().update_warehouse(
-                resource_id, updated_warehouse
-            ),
-            data_provider.fetch_warehouse_pool().save()
-        ),
-        # locations
-        ("locations", "id"): lambda resource_id, updated_locatioon: (
-            data_provider.fetch_location_pool().update_location(
-                resource_id, updated_locatioon
-            ),
-            data_provider.fetch_location_pool().save()
-        ),
-        # transfers
-        ("transfers", "id"): lambda resource_id, updated_transfer: (
-            data_provider.fetch_transfer_pool().update_transfer(
-                resource_id, updated_transfer
-            ),
-            data_provider.fetch_transfer_pool().save()
-        ),
-        # items
-        ("items", "id"): lambda resource_id, updated_item: (
-            data_provider.fetch_item_pool().update_item(
-                resource_id, updated_item
-            ),
-            data_provider.fetch_item_pool().save()
-        ),
-        # item_lines
-        ("item_lines", "id"): lambda resource_id, updated_item_line: (
-            data_provider.fetch_item_line_pool().update_item_line(
-                resource_id, updated_item_line
-            ),
-            data_provider.fetch_item_line_pool().save()
-        ),
-        # item_groups
-        ("item_groups", "id"): lambda resource_id, updated_item_group: (
-            data_provider.fetch_item_group_pool().update_item_group(
-                resource_id, updated_item_group
-            ),
-            data_provider.fetch_item_group_pool().save()
-        ),
-        # item_types
-        ("item_types", "id"): lambda resource_id, updated_item_type: (
-            data_provider.fetch_item_type_pool().update_item_type(
-                resource_id, updated_item_type
-            ),
-            data_provider.fetch_item_type_pool().save()
-        ),
-        # suppliers
-        ("suppliers", "id"): lambda resource_id, updated_supplier: (
-            data_provider.fetch_supplier_pool().update_supplier(
-                resource_id, updated_supplier
-            ),
-            data_provider.fetch_supplier_pool().save()
-        ),
-        # orders
-        ("orders", "id"): lambda resource_id, updated_order: (
-            data_provider.fetch_order_pool().update_order(
-                resource_id, updated_order
-            ),
-            data_provider.fetch_order_pool().save()
-        ),
-        ("orders", "id", "items"): lambda resource_id, updated_item_in_order: (
-            data_provider.fetch_order_pool().update_items_in_order(
-                resource_id, updated_item_in_order
-            ),
-            data_provider.fetch_order_pool().save()
-        ),
-        # clients
-        ("clients", "id"): lambda resource_id, updated_client: (
-            data_provider.fetch_client_pool().update_client(
-                resource_id, updated_client
-            ),
-            data_provider.fetch_client_pool().save()
-        ),
-        # shipments
-        ("shipments", "id"): lambda resource_id, updated_shipment: (
-            data_provider.fetch_shipment_pool().update_shipment(
-                resource_id, updated_shipment
-            ),
-            data_provider.fetch_shipment_pool().save()
-        ),
-        ("shipments", "id", "orders"): lambda resource_id, updated_order_in_shipment: (
-            data_provider.fetch_shipment_pool().update_orders_in_shipment(
-                resource_id, updated_order_in_shipment
-            ),
-            data_provider.fetch_shipment_pool().save()
-        ),
-        ("shipments", "id", "items"): lambda resource_id, updated_item_in_shipment: (
-            data_provider.fetch_shipment_pool().update_items_in_shipment(
-                resource_id, updated_item_in_shipment
-            ),
-            data_provider.fetch_shipment_pool().save(),
-            data_provider.fetch_inventory_pool().save()
-        ),
-    }
-    POST_FUNCTIONS = {
-        ("warehouses",): lambda resource: data_provider.fetch_warehouse_pool().add_warehouse(resource),
-        ("locations",): lambda resource: data_provider.fetch_location_pool().add_location(resource),
-        ("transfers",): lambda resource: data_provider.fetch_transfer_pool().add_transfer(resource),
-        ("items",): lambda resource: data_provider.fetch_item_pool().add_item(resource),
-        ("item_lines",): lambda resource: data_provider.fetch_item_line_pool().add_item_line(resource),
-        ("item_groups",): lambda resource: data_provider.fetch_item_group_pool().add_item_group(resource),
-        ("item_types",): lambda resource: data_provider.fetch_item_type_pool().add_item_type(resource),
-        ("inventories",): lambda resource: data_provider.fetch_inventory_pool().add_inventory(resource),
-        ("suppliers",): lambda resource: data_provider.fetch_supplier_pool().add_supplier(resource),
-        ("orders",): lambda resource: data_provider.fetch_order_pool().add_order(resource),
-        ("clients",): lambda resource: data_provider.fetch_client_pool().add_client(resource),
-        ("shipments",): lambda resource: data_provider.fetch_shipment_pool().add_shipment(resource),
-    }
-    DELETE_FUNCTIONS = {
-
-        "warehouses": lambda id: (data_provider.fetch_warehouse_pool().remove_warehouse(id), data_provider.fetch_warehouse_pool().save()),
-        "locations": lambda id: (data_provider.fetch_location_pool().remove_location(id), data_provider.fetch_location_pool().save()),
-        "transfers": lambda id: (data_provider.fetch_transfer_pool().remove_transfer(id), data_provider.fetch_transfer_pool().save()),
-        "items": lambda id: (data_provider.fetch_item_pool().remove_item(id), data_provider.fetch_item_pool().save()),
-        "item_lines": lambda id: (data_provider.fetch_item_line_pool().remove_item_line(id), data_provider.fetch_item_line_pool().save()),
-        "item_groups": lambda id: (data_provider.fetch_item_group_pool().remove_item_group(id), data_provider.fetch_item_group_pool().save()),
-        "item_types": lambda id: (data_provider.fetch_item_type_pool().remove_item_type(id), data_provider.fetch_item_type_pool().save()),
-        "suppliers": lambda id: (data_provider.fetch_supplier_pool().remove_supplier(id), data_provider.fetch_supplier_pool().save()),
-        "orders": lambda id: (data_provider.fetch_order_pool().remove_order(id), data_provider.fetch_order_pool().save()),
-        "clients": lambda id: (data_provider.fetch_client_pool().remove_client(id), data_provider.fetch_client_pool().save()),
-        "shipments": lambda id: (data_provider.fetch_shipment_pool().remove_shipment(id), data_provider.fetch_shipment_pool().save()),
-    }
-
-    def handle_get_version_1(self, paths: list[str], user: str | None):
-        code = get_services.handle_get_version_1(self, paths, user)
-        if (code != 404):
-            self.send_json(200, code)
-        else:
-            self.send_json(code)
+    def _handle_api_method(self, method: str):
+        try:
+            paths, user = self.validate_request(method.lower())
+            if paths is None:
+                return
+            status_code, body = self.dispatch_request(method, paths, user)
+            self.send_json(status_code, body)
+        except Exception:
+            self.send_json(500)
 
     def do_GET(self):
-        try:
-            paths, user = self.validate_request("get")
-            if paths is not None:
-                self.handle_get_version_1(paths, user)
-        except Exception:
-            self.send_json(500)
-
-    def handle_post_version_1(self, paths: list[str], user: str | None):
-        code = post_service.handle_post_version_1(self, paths, user)
-        if (isinstance(code, tuple)):
-            if (code[0] == 400 or code[0] == 404):
-                self.send_json(code)
-            else:
-                self.send_json(201, code)
+        self._handle_api_method("GET")
 
     def do_POST(self):
-        try:
-            paths, user = self.validate_request("post")
-            if paths is not None:
-                self.handle_post_version_1(paths, user)
-        except Exception:
-            self.send_json(500)
-
-    def handle_put_version_1(self, paths):
-        code = put_service.handle_put_version_1(self, paths)
-        if (isinstance(code, tuple)):
-            if (code[0] == 400 or code[0] == 404):
-                self.send_json(code)
-            else:
-                self.send_json(code)
+        self._handle_api_method("POST")
 
     def do_PUT(self):
-        try:
-            paths, user = self.validate_request("put")
-
-            if paths is not None:
-                self.handle_put_version_1(paths)
-
-        except Exception:
-            self.send_json(500)
-
-    def handle_delete_version_1(self, paths, user):
-        code = delete_service.handle_delete_version_1(self, paths, user)
-        if (isinstance(code, tuple)):
-            if (code[0] == 400 or code[0] == 404 or code[0] == 405):
-                self.send_json(code)
-            else:
-                self.send_json(201, code)
+        self._handle_api_method("PUT")
 
     def do_DELETE(self):
-        try:
-            paths, user = self.validate_request("delete")
-            if paths is not None:
-                self.handle_delete_version_1(paths, user)
-        except Exception:
-            self.send_json(500)
+        self._handle_api_method("DELETE")
 
 
 if __name__ == "__main__":

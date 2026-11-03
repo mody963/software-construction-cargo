@@ -11,7 +11,10 @@ class ItemsController:
     }
 
     POST_FUNCTIONS = {
-            ("items",): lambda resource: data_provider.fetch_item_pool().add_item(resource)
+                        ("items",): lambda resource: (
+                                data_provider.fetch_item_pool().add_item(resource),
+                                data_provider.fetch_item_pool().save()
+                        )
     }
     
     PUT_FUNCTIONS = {

@@ -1,7 +1,7 @@
 from providers import data_provider
 
 
-class Item_linesController:
+class Item_groupsController:
 
     GET_FUNCTIONS = {
             ("item_groups",): lambda resource_id: data_provider.fetch_item_group_pool().get_item_groups(),
@@ -10,7 +10,10 @@ class Item_linesController:
     }
 
     POST_FUNCTIONS = {
-            ("item_groups",): lambda resource: data_provider.fetch_item_group_pool().add_item_group(resource),
+                        ("item_groups",): lambda resource: (
+                                data_provider.fetch_item_group_pool().add_item_group(resource),
+                                data_provider.fetch_item_group_pool().save()
+                        ),
     }
     
     PUT_FUNCTIONS = {

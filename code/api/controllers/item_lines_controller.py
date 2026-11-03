@@ -10,7 +10,10 @@ class Item_linesController:
     }
 
     POST_FUNCTIONS = {
-            ("item_lines",): lambda resource: data_provider.fetch_item_line_pool().add_item_line(resource)
+                        ("item_lines",): lambda resource: (
+                                data_provider.fetch_item_line_pool().add_item_line(resource),
+                                data_provider.fetch_item_line_pool().save()
+                        )
     }
     
     PUT_FUNCTIONS = {
