@@ -24,6 +24,14 @@ class GenericRepository(Generic[T]):
 # hierdoor niet constant opnieuw de code te openen, gewoon 1x bij het aanroepen, 
 # deze kan e dan gwn meteen pakkeb bij de all en dan hoef je het niet opnieuw af te lezen en aan te roepen, cashings onderdeel.  
 
+    
+    # of object hoort bij meegegevenn id
+    def _matches(self, item: T, key_values: tuple) -> bool:
+        for index, field in enumerate(self.key_fields):
+            if getattr(item, field, None) != key_values[index]:
+                return False
+
+        return True
 
 
     def load(self) -> list[T]:
@@ -42,7 +50,7 @@ class GenericRepository(Generic[T]):
 
 
 
-    def get_by_id(self, *key_values) -> Optional[T]:
+    def get_by_id(self, *key_values) -> Optional[T]: # *key_values is dus alle items van de tupple mochten het er dus 1 zijn die afhankelijk is van 2 id's 
         if len(key_values) != len(self.key_fields):
             raise ValueError("The number of key values does not match the key fields.")
 
@@ -52,16 +60,29 @@ class GenericRepository(Generic[T]):
 
         return None
 
+
+    
+    def _get_key_values(self, item: T) -> tuple:
+        return tuple(
+            getattr(item, field)
+            for field in self.key_fields
+        )
+
+
+
+    
     def insert(self, item: T) -> T:
         key_values = self._get_key_values(item)
 
         if self.get_by_id(*key_values) is not None:
-            raise ValueError("An item with this key already exists.")
+            raise ValueError("An item with this key already exists.") 
 
         self.data.append(item)
         self.save()
 
         return item
+
+
 
     def update(self, *key_values, item: T) -> Optional[T]:
         if len(key_values) != len(self.key_fields):
@@ -88,6 +109,8 @@ class GenericRepository(Generic[T]):
                 return True
 
         return False
+
+
 
     
     def save(self):
@@ -116,17 +139,3 @@ class GenericRepository(Generic[T]):
 
         if self.debug:
             print(f"Saved data to {self.file_path}")
-
-
-    def _matches(self, item: T, key_values: tuple) -> bool:
-        for index, field in enumerate(self.key_fields):
-            if getattr(item, field, None) != key_values[index]:
-                return False
-
-        return True
-
-    def _get_key_values(self, item: T) -> tuple:
-        return tuple(
-            getattr(item, field)
-            for field in self.key_fields
-        )
