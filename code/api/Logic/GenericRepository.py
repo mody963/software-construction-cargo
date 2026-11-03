@@ -77,7 +77,7 @@ class GenericRepository(Generic[T]):
         if self.get_by_id(*key_values) is not None:
             raise ValueError("An item with this key already exists.") 
 
-        self.data.append(item)
+        self.data.append(item) # item word dus toegevoegd aan de list van producten
         self.save()
 
         return item
