@@ -1,10 +1,9 @@
 import json
 
 from services import transfer_service
+from services import lamba_functions_service
 
-from helpers.validator import validate_request_body
-
-from main import ApiRequestHandler
+from helpers import validator
 
 
 def handle_put_version_1(self, paths):
@@ -33,7 +32,8 @@ def handle_put_version_1(self, paths):
         key = (resource, "id")
 
         # Valideer het hoofdschema alleen bij directe updates (bijv. /warehouses/1)
-        is_valid, error_msg = validate_request_body(resource, payload)
+        is_valid, error_msg = validator.validate_request_body(
+            resource, payload)
         if not is_valid:
             return (400, {"error": error_msg})
 
@@ -42,10 +42,10 @@ def handle_put_version_1(self, paths):
         # de * zorgt voor unpacking dus je krijgt geen list met antwoord maar alleen antwoord
         key = (resource, "id", *paths[2:])
 
-    put_function = ApiRequestHandler.PUT_FUNCTIONS.get(key)
+    put_function = lamba_functions_service.PUT_FUNCTIONS.get(key)
 
     if put_function is None:
-        return int(404)
+        return (404)
 
     # DIT MOET NOG GEBEUREN
     # Controleer in je data-provider of het item wel bestaat
@@ -54,4 +54,4 @@ def handle_put_version_1(self, paths):
     # of je voegt hier een GET check toe.
 
     put_function(resource_id, payload)
-    return int(200)
+    return (200)

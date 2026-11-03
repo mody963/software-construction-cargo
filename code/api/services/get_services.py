@@ -1,8 +1,6 @@
 import json
 
-from helpers.validator import validate_request_body
-
-from main import ApiRequestHandler
+from services import lamba_functions_service
 
 
 def handle_get_version_1(self, paths: list[str], user: str | None):
@@ -16,7 +14,7 @@ def handle_get_version_1(self, paths: list[str], user: str | None):
 
     key = tuple(key_delen)
 
-    route = ApiRequestHandler.GET_FUNCTIONS.get(key)
+    route = lamba_functions_service.GET_FUNCTIONS.get(key)
     if route is None:
         return (404)
 
@@ -34,4 +32,4 @@ def handle_get_version_1(self, paths: list[str], user: str | None):
     if result is None:
         return (404)
 
-    return (200, result)
+    return result

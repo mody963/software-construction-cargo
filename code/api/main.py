@@ -7,9 +7,8 @@ from providers import data_provider
 
 from processors import notification_processor
 
-from helpers.validator import validate_request_body
+from helpers import validator
 
-from services import transfer_service
 from services import delete_service
 from services import put_service
 from services import post_service
@@ -271,7 +270,10 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def handle_get_version_1(self, paths: list[str], user: str | None):
         code = get_services.handle_get_version_1(self, paths, user)
-        self.send_json(code)
+        if (code != 404):
+            self.send_json(200, code)
+        else:
+            self.send_json(code)
 
     def do_GET(self):
         try:
@@ -283,7 +285,11 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def handle_post_version_1(self, paths: list[str], user: str | None):
         code = post_service.handle_post_version_1(self, paths, user)
-        self.send_json(code)
+        if (isinstance(code, tuple)):
+            if (code[0] == 400 or code[0] == 404):
+                self.send_json(code)
+            else:
+                self.send_json(201, code)
 
     def do_POST(self):
         try:
@@ -295,7 +301,11 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def handle_put_version_1(self, paths):
         code = put_service.handle_put_version_1(self, paths)
-        self.send_json(code)
+        if (isinstance(code, tuple)):
+            if (code[0] == 400 or code[0] == 404):
+                self.send_json(code)
+            else:
+                self.send_json(code)
 
     def do_PUT(self):
         try:
@@ -309,7 +319,11 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def handle_delete_version_1(self, paths, user):
         code = delete_service.handle_delete_version_1(self, paths, user)
-        self.send_json(code)
+        if (isinstance(code, tuple)):
+            if (code[0] == 400 or code[0] == 404 or code[0] == 405):
+                self.send_json(code)
+            else:
+                self.send_json(201, code)
 
     def do_DELETE(self):
         try:

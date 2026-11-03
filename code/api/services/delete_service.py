@@ -1,4 +1,4 @@
-from main import ApiRequestHandler
+from services import lamba_functions_service
 
 
 def handle_delete_version_1(self, paths, user):
@@ -12,7 +12,7 @@ def handle_delete_version_1(self, paths, user):
     if resource == "inventories":
         return int(404)
 
-    delete_action = ApiRequestHandler.DELETE_FUNCTIONS.get(resource)
+    delete_action = lamba_functions_service.DELETE_FUNCTIONS.get(resource)
     if delete_action is None:
         return int(404)
 
