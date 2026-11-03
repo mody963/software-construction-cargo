@@ -7,6 +7,8 @@ from providers import data_provider
 
 from processors import notification_processor
 
+from services import transfer_service
+
 
 from enum import Enum
 
@@ -261,7 +263,6 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         "shipments": lambda id: (data_provider.fetch_shipment_pool().remove_shipment(id), data_provider.fetch_shipment_pool().save()),
     }
 
-
     def handle_get_version_1(self, paths: list[str], user: str | None):
         key_delen = []
 
@@ -300,8 +301,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_get_version_1(paths, user)
         except Exception:
             self.send_json(500)
-  
-  
+
     def handle_post_version_1(self, paths: list[str], user: str | None):
         key_delen = []
 
@@ -326,7 +326,6 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             self.send_json(500)
 
-
     def handle_put_version_1(self, paths):
         if len(paths) < 2:
             self.send_json(404)
@@ -342,7 +341,7 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
         #   commit route
         if resource == "transfers" and len(paths) == 3 and paths[2] == "commit":
-            self.handle_transfer_commit(resource_id)
+            transfer_service.handle_transfer_commit(self, resource_id)
             return
 
         # Alle andere routes
@@ -375,7 +374,6 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
         except Exception:
             self.send_json(500)
-
 
     def handle_delete_version_1(self, paths, user):
         # Issue #39 oplossen: Als er geen ID is meegegeven (padlengte 1), is het een collectie
@@ -410,71 +408,13 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             self.send_json(500)
 
-    # apparte transfer comit functie
-    # deze transfer commit functie zorgt er voor dat als er een product van locatie veranderd dit overal juist wordt aan gepast
-    # zodat er geen fouten in de vooraad kunnen zijn
-    def handle_transfer_commit(self, transfer_id):
-        transfer_pool = data_provider.fetch_transfer_pool()
-        transfer = transfer_pool.get_transfer(transfer_id)
-
-        if transfer is None:
-            self.send_json(404)
-            return
-
-        from_location_id = transfer["from_location_id"]
-        to_location_id = transfer["to_location_id"]
-        inventory_pool = data_provider.fetch_inventory_pool()
-
-        for item in transfer["items"]:
-            item_id = item["item_id"]
-            amount = item["amount"]
-
-            src = inventory_pool.get_inventory(item_id, from_location_id)
-
-            if src is not None:
-                src["quantity_on_hand"] -= amount
-                inventory_pool.update_inventory(
-                    item_id, from_location_id, src
-                )
-
-            dst = inventory_pool.get_inventory(item_id, to_location_id)
-
-            if dst is not None:
-                dst["quantity_on_hand"] += amount
-                inventory_pool.update_inventory(
-                    item_id, to_location_id, dst
-                )
-            else:
-                inventory_pool.add_inventory({
-                    "item_id": item_id,
-                    "location_id": to_location_id,
-                    "quantity_on_hand": amount,
-                    "quantity_expected": 0,
-                    "quantity_ordered": 0,
-                    "quantity_allocated": 0,
-                })
-
-        transfer["transfer_status"] = "Processed"
-        transfer.pop("items", None)
-
-        transfer_pool.update_transfer(transfer_id, transfer)
-
-        notification_processor.push(
-            f"Processed batch transfer with id:{transfer['id']}"
-        )
-
-        transfer_pool.save()
-        inventory_pool.save()
-
-        self.send_json(200)
-
 
 if __name__ == "__main__":
     PORT = 3000
     with socketserver.TCPServer(("", PORT), ApiRequestHandler) as httpd:
         notification_processor.start()
         print(f"Serving on port {PORT}...")
-        httpd.serve_forever()   
+        httpd.serve_forever()
 
 # def handle_delete_version_1(self, paths, user):
     #     if paths[0] == "warehouses":
@@ -550,9 +490,7 @@ if __name__ == "__main__":
     #         self.send_response(404)
     #         self.end_headers()
 
-    
     # alle losse functions die er zijn om zo de elif  evt weg te kunne halen.
-
 
     # def handle_get_version_2(self, paths: list[str], user: str |None):
     #     parts= len(paths)
@@ -721,8 +659,6 @@ if __name__ == "__main__":
     #                         self.send_response_code(data_provider.fetch_shipment_pool().get_items_in_shipment(resource_id))
     #                     else:
     #                         self.send_response_code(data=[], status_code=404)
-
-
 
     # def handle_post_version_1(self, paths, user):
     #     if paths[0] == "warehouses":
@@ -1066,11 +1002,3 @@ if __name__ == "__main__":
 #     else:
 #         self.send_response(404)
 #         self.end_headers()
-
-
-
-
-
-
-
-
