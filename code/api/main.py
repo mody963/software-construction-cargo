@@ -7,6 +7,9 @@ from providers import data_provider
 
 from processors import notification_processor
 
+from helpers.validator import validate_request_body
+
+
 
 from enum import Enum
 
@@ -303,20 +306,31 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
   
   
     def handle_post_version_1(self, paths: list[str], user: str | None):
-        key_delen = []
+        if not paths:
+            return self.send_json(400)
 
-        for part in enumerate(paths):
-            key_delen.append(part)
+        resource = paths[0]
+        
+        try:
+            payload = self.read_json_body()
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return self.send_json(400, {"error": "Invalid JSON format"})
 
-        key = tuple(key_delen)
+        # Valideer de inkomende JSON tegen het schema
+        is_valid, error_msg = validate_request_body(resource, payload)
+        if not is_valid:
+            # Als er velden missen of datatypes niet kloppen: 400 Bad Request
+            return self.send_json(400, {"error": error_msg})
 
+        key = (resource,)
         route = self.POST_FUNCTIONS.get(key)
-        if route == None:
-            self.send_json(data=[], status_code=404)
-            return
+        if route is None:
+            return self.send_json(404)
 
-        result = route(self.read_json_body())
+        result = route(payload)
+        
         self.send_json(201, result)
+
 
     def do_POST(self):
         try:
@@ -329,42 +343,53 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def handle_put_version_1(self, paths):
         if len(paths) < 2:
-            self.send_json(404)
-            return
+            return self.send_json(404)
 
         resource = paths[0]
 
         try:
             resource_id = int(paths[1])
         except ValueError:
-            self.send_json(400)
-            return
+            return self.send_json(400, {"error": "ID must be an integer"})
 
-        #   commit route
+        # Speciale afhandeling voor transfers commit (geeft geen payload)
         if resource == "transfers" and len(paths) == 3 and paths[2] == "commit":
             self.handle_transfer_commit(resource_id)
             return
 
-        # Alle andere routes
+        try:
+            payload = self.read_json_body()
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return self.send_json(400, {"error": "Invalid JSON format"})
+
+        # Bepaal de key voor PUT_FUNCTIONS
         if len(paths) == 2:
             key = (resource, "id")
+            
+            # Valideer het hoofdschema alleen bij directe updates (bijv. /warehouses/1)
+            is_valid, error_msg = validate_request_body(resource, payload)
+            if not is_valid:
+                return self.send_json(400, {"error": error_msg})
+                
         else:
+            # Voor sub-routes (zoals /orders/1/items) skippen we de validatie tegen 
+            # de * zorgt voor unpacking dus je krijgt geen list met antwoord maar alleen antwoord
             key = (resource, "id", *paths[2:])
 
         put_function = self.PUT_FUNCTIONS.get(key)
 
         if put_function is None:
-            self.send_json(404)
-            return
+            return self.send_json(404)
 
-        try:
-            updated_resource = self.read_json_body()
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            self.send_json(400)
-            return
-
-        put_function(resource_id, updated_resource)
+        ##                                                  DIT MOET NOG GEBEUREN
+        # Controleer in je data-provider of het item wel bestaat 
+        # voordat je het updatet, anders krijg je bugs waar niet-bestaande items 
+        # worden toegevoegd of de server crasht. het liefst doet de data-provider dit, 
+        # of je voegt hier een GET check toe.
+        
+        put_function(resource_id, payload)
         self.send_json(200)
+
 
     def do_PUT(self):
         try:
