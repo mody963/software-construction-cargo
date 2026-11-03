@@ -7,8 +7,12 @@ from providers import data_provider
 
 from processors import notification_processor
 
-from helpers.validator import validate_request_body
+from helpers import validator
 
+from services import delete_service
+from services import put_service
+from services import post_service
+from services import get_services
 
 
 from enum import Enum
@@ -264,37 +268,12 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         "shipments": lambda id: (data_provider.fetch_shipment_pool().remove_shipment(id), data_provider.fetch_shipment_pool().save()),
     }
 
-
     def handle_get_version_1(self, paths: list[str], user: str | None):
-        key_delen = []
-
-        for index, part in enumerate(paths):
-            if index == 1:
-                key_delen.append("id")
-            else:
-                key_delen.append(part)
-
-        key = tuple(key_delen)
-
-        route = self.GET_FUNCTIONS.get(key)
-        if route is None:
-            return self.send_json(404)
-
-        resource_id = None
-
-        if len(paths) > 1:
-            try:
-                resource_id = int(paths[1])
-            except ValueError:
-                return self.send_json(400)  # Voorkomt de 500-crash met strings
-
-        result = route(resource_id)
-
-        # Voorkomt dat een niet-bestaand ID (zoals 9999) een 200 met null geeft
-        if result is None:
-            return self.send_json(404)
-
-        self.send_json(200, result)
+        code = get_services.handle_get_version_1(self, paths, user)
+        if (code != 404):
+            self.send_json(200, code)
+        else:
+            self.send_json(code)
 
     def do_GET(self):
         try:
@@ -303,34 +282,14 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_get_version_1(paths, user)
         except Exception:
             self.send_json(500)
-  
-  
+
     def handle_post_version_1(self, paths: list[str], user: str | None):
-        if not paths:
-            return self.send_json(400)
-
-        resource = paths[0]
-        
-        try:
-            payload = self.read_json_body()
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            return self.send_json(400, {"error": "Invalid JSON format"})
-
-        # Valideer de inkomende JSON tegen het schema
-        is_valid, error_msg = validate_request_body(resource, payload)
-        if not is_valid:
-            # Als er velden missen of datatypes niet kloppen: 400 Bad Request
-            return self.send_json(400, {"error": error_msg})
-
-        key = (resource,)
-        route = self.POST_FUNCTIONS.get(key)
-        if route is None:
-            return self.send_json(404)
-
-        result = route(payload)
-        
-        self.send_json(201, result)
-
+        code = post_service.handle_post_version_1(self, paths, user)
+        if (isinstance(code, tuple)):
+            if (code[0] == 400 or code[0] == 404):
+                self.send_json(code)
+            else:
+                self.send_json(201, code)
 
     def do_POST(self):
         try:
@@ -340,56 +299,13 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             self.send_json(500)
 
-
     def handle_put_version_1(self, paths):
-        if len(paths) < 2:
-            return self.send_json(404)
-
-        resource = paths[0]
-
-        try:
-            resource_id = int(paths[1])
-        except ValueError:
-            return self.send_json(400, {"error": "ID must be an integer"})
-
-        # Speciale afhandeling voor transfers commit (geeft geen payload)
-        if resource == "transfers" and len(paths) == 3 and paths[2] == "commit":
-            self.handle_transfer_commit(resource_id)
-            return
-
-        try:
-            payload = self.read_json_body()
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            return self.send_json(400, {"error": "Invalid JSON format"})
-
-        # Bepaal de key voor PUT_FUNCTIONS
-        if len(paths) == 2:
-            key = (resource, "id")
-            
-            # Valideer het hoofdschema alleen bij directe updates (bijv. /warehouses/1)
-            is_valid, error_msg = validate_request_body(resource, payload)
-            if not is_valid:
-                return self.send_json(400, {"error": error_msg})
-                
-        else:
-            # Voor sub-routes (zoals /orders/1/items) skippen we de validatie tegen 
-            # de * zorgt voor unpacking dus je krijgt geen list met antwoord maar alleen antwoord
-            key = (resource, "id", *paths[2:])
-
-        put_function = self.PUT_FUNCTIONS.get(key)
-
-        if put_function is None:
-            return self.send_json(404)
-
-        ##                                                  DIT MOET NOG GEBEUREN
-        # Controleer in je data-provider of het item wel bestaat 
-        # voordat je het updatet, anders krijg je bugs waar niet-bestaande items 
-        # worden toegevoegd of de server crasht. het liefst doet de data-provider dit, 
-        # of je voegt hier een GET check toe.
-        
-        put_function(resource_id, payload)
-        self.send_json(200)
-
+        code = put_service.handle_put_version_1(self, paths)
+        if (isinstance(code, tuple)):
+            if (code[0] == 400 or code[0] == 404):
+                self.send_json(code)
+            else:
+                self.send_json(code)
 
     def do_PUT(self):
         try:
@@ -401,31 +317,13 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             self.send_json(500)
 
-
     def handle_delete_version_1(self, paths, user):
-        # Issue #39 oplossen: Als er geen ID is meegegeven (padlengte 1), is het een collectie
-        if len(paths) == 1:
-            return self.send_json(405)  # 405 Method Not Allowed
-
-        resource = paths[0]
-
-        # Inventories mogen niet verwijderd worden via ID
-        if resource == "inventories":
-            return self.send_json(404)
-
-        delete_action = self.DELETE_FUNCTIONS.get(resource)
-        if delete_action is None:
-            return self.send_json(404)
-
-        try:
-            resource_id = int(paths[1])
-        except ValueError:
-            # 500-crash voorkomen bij string ID's
-            return self.send_json(400)
-
-        # Voer de verwijder-actie en save() uit
-        delete_action(resource_id)
-        self.send_json(200)
+        code = delete_service.handle_delete_version_1(self, paths, user)
+        if (isinstance(code, tuple)):
+            if (code[0] == 400 or code[0] == 404 or code[0] == 405):
+                self.send_json(code)
+            else:
+                self.send_json(201, code)
 
     def do_DELETE(self):
         try:
@@ -435,71 +333,13 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             self.send_json(500)
 
-    # apparte transfer comit functie
-    # deze transfer commit functie zorgt er voor dat als er een product van locatie veranderd dit overal juist wordt aan gepast
-    # zodat er geen fouten in de vooraad kunnen zijn
-    def handle_transfer_commit(self, transfer_id):
-        transfer_pool = data_provider.fetch_transfer_pool()
-        transfer = transfer_pool.get_transfer(transfer_id)
-
-        if transfer is None:
-            self.send_json(404)
-            return
-
-        from_location_id = transfer["from_location_id"]
-        to_location_id = transfer["to_location_id"]
-        inventory_pool = data_provider.fetch_inventory_pool()
-
-        for item in transfer["items"]:
-            item_id = item["item_id"]
-            amount = item["amount"]
-
-            src = inventory_pool.get_inventory(item_id, from_location_id)
-
-            if src is not None:
-                src["quantity_on_hand"] -= amount
-                inventory_pool.update_inventory(
-                    item_id, from_location_id, src
-                )
-
-            dst = inventory_pool.get_inventory(item_id, to_location_id)
-
-            if dst is not None:
-                dst["quantity_on_hand"] += amount
-                inventory_pool.update_inventory(
-                    item_id, to_location_id, dst
-                )
-            else:
-                inventory_pool.add_inventory({
-                    "item_id": item_id,
-                    "location_id": to_location_id,
-                    "quantity_on_hand": amount,
-                    "quantity_expected": 0,
-                    "quantity_ordered": 0,
-                    "quantity_allocated": 0,
-                })
-
-        transfer["transfer_status"] = "Processed"
-        transfer.pop("items", None)
-
-        transfer_pool.update_transfer(transfer_id, transfer)
-
-        notification_processor.push(
-            f"Processed batch transfer with id:{transfer['id']}"
-        )
-
-        transfer_pool.save()
-        inventory_pool.save()
-
-        self.send_json(200)
-
 
 if __name__ == "__main__":
     PORT = 3000
     with socketserver.TCPServer(("", PORT), ApiRequestHandler) as httpd:
         notification_processor.start()
         print(f"Serving on port {PORT}...")
-        httpd.serve_forever()   
+        httpd.serve_forever()
 
 # def handle_delete_version_1(self, paths, user):
     #     if paths[0] == "warehouses":
@@ -575,9 +415,7 @@ if __name__ == "__main__":
     #         self.send_response(404)
     #         self.end_headers()
 
-    
     # alle losse functions die er zijn om zo de elif  evt weg te kunne halen.
-
 
     # def handle_get_version_2(self, paths: list[str], user: str |None):
     #     parts= len(paths)
@@ -746,8 +584,6 @@ if __name__ == "__main__":
     #                         self.send_response_code(data_provider.fetch_shipment_pool().get_items_in_shipment(resource_id))
     #                     else:
     #                         self.send_response_code(data=[], status_code=404)
-
-
 
     # def handle_post_version_1(self, paths, user):
     #     if paths[0] == "warehouses":
@@ -1091,11 +927,3 @@ if __name__ == "__main__":
 #     else:
 #         self.send_response(404)
 #         self.end_headers()
-
-
-
-
-
-
-
-
