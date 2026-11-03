@@ -1,6 +1,6 @@
 import json
 
-from models.base import Base
+from Logic.base import Base
 
 class TransferItems(Base):
     """Rows of the `transfer_item` table (id, transfer_id, item_id, amount)."""
