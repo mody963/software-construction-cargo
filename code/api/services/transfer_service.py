@@ -12,8 +12,7 @@ def handle_transfer_commit(self, transfer_id):
     transfer = transfer_pool.get_transfer(transfer_id)
 
     if transfer is None:
-        self.send_json(404)
-        return
+        return int(404)
 
     from_location_id = transfer["from_location_id"]
     to_location_id = transfer["to_location_id"]
@@ -60,4 +59,4 @@ def handle_transfer_commit(self, transfer_id):
     transfer_pool.save()
     inventory_pool.save()
 
-    self.send_json(200)
+    return int(200)
