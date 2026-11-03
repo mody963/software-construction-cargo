@@ -1,21 +1,21 @@
 import functools
 import os
 
-from models.warehouses import Warehouses
-from models.locations import Locations
-from models.transfers import Transfers
-from models.transfer_items import TransferItems
-from models.items import Items
-from models.item_lines import ItemLines
-from models.item_groups import ItemGroups
-from models.item_types import ItemTypes
-from models.inventories import Inventories
-from models.suppliers import Suppliers
-from models.orders import Orders
-from models.order_items import OrderItems
-from models.clients import Clients
-from models.shipments import Shipments
-from models.shipment_items import ShipmentItems
+from Logic.warehouses import Warehouses
+from Logic.locations import Locations
+from Logic.transfers import Transfers
+from Logic.transfer_items import TransferItems
+from Logic.items import Items
+from Logic.item_lines import ItemLines
+from Logic.item_groups import ItemGroups
+from Logic.item_types import ItemTypes
+from Logic.inventories import Inventories
+from Logic.suppliers import Suppliers
+from Logic.orders import Orders
+from Logic.order_items import OrderItems
+from Logic.clients import Clients
+from Logic.shipments import Shipments
+from Logic.shipment_items import ShipmentItems
 
 DEBUG = False
 
