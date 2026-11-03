@@ -5,7 +5,6 @@ from urllib.parse import urlsplit
 
 from providers import auth_provider
 from processors import notification_processor
-from helpers import validator
 from controllers import (
     WarehousesController,
     LocationsController,
@@ -20,7 +19,6 @@ from controllers import (
     ClientsController,
     ShipmentsController
 )
-from services import transfer_service
 
 CONTROLLERS = {
     "warehouses": WarehousesController,
@@ -74,77 +72,13 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
         return None, None
 
     def dispatch_request(self, method: str, paths: list[str], user=None):
-        method = method.upper()
-        if method not in {"GET", "POST", "PUT", "DELETE"}:
-            return 405, None
         if not paths:
             return 404, None
 
-        resource = paths[0]
-        controller = CONTROLLERS.get(resource)
+        controller = CONTROLLERS.get(paths[0])
         if controller is None:
             return 404, None
-
-        if method == "DELETE" and len(paths) == 1:
-            return 405, None
-        if method == "DELETE" and resource == "inventories":
-            return 404, None
-
-        if method == "PUT" and resource == "transfers" and len(paths) == 3 and paths[2] == "commit":
-            try:
-                transfer_id = int(paths[1])
-            except ValueError:
-                return 400, {"error": "ID must be an integer"}
-            return transfer_service.handle_transfer_commit(self, transfer_id), None
-
-        functions = getattr(controller, f"{method}_FUNCTIONS", {})
-        selected_function = None
-        for route, function in functions.items():
-            if isinstance(route, str):
-                route = (route, "id") if method == "DELETE" else (route,)
-            if len(route) != len(paths):
-                continue
-            matches = all(
-                expected == actual or expected == "id"
-                for expected, actual in zip(route, paths)
-            )
-            if matches:
-                selected_function = function
-                break
-        if selected_function is None:
-            return 404, None
-
-        resource_id = None
-        if len(paths) > 1:
-            try:
-                resource_id = int(paths[1])
-            except ValueError:
-                return 400, {"error": "ID must be an integer"}
-
-        if method == "GET":
-            result = selected_function(resource_id)
-            return (404, None) if result is None else (200, result)
-
-        if method in {"POST", "PUT"}:
-            try:
-                payload = self.read_json_body()
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                return 400, {"error": "Invalid JSON format"}
-
-            if method == "POST" or len(paths) == 2:
-                is_valid, error_message = validator.validate_request_body(resource, payload)
-                if not is_valid:
-                    return 400, {"error": error_message}
-
-            if method == "POST":
-                selected_function(payload)
-                return 201, None
-
-            selected_function(resource_id, payload)
-            return 200, None
-
-        selected_function(resource_id)
-        return 200, None
+        return controller.dispatch_request(self, method, paths)
 
     def _handle_api_method(self, method: str):
         try:
@@ -175,6 +109,10 @@ if __name__ == "__main__":
         notification_processor.start()
         print(f"Serving on port {PORT}...")
         httpd.serve_forever()
+
+
+
+
 
 # def handle_delete_version_1(self, paths, user):
     #     if paths[0] == "warehouses":

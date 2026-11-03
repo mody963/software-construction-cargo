@@ -1,7 +1,8 @@
 from providers import data_provider
+from .base_controller import BaseController
 
 
-class Item_groupsController:
+class Item_groupsController(BaseController):
 
     GET_FUNCTIONS = {
             ("item_groups",): lambda resource_id: data_provider.fetch_item_group_pool().get_item_groups(),

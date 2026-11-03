@@ -1,7 +1,8 @@
 from providers import data_provider
+from .base_controller import BaseController
 
 
-class ShipmentsController:
+class ShipmentsController(BaseController):
 
     GET_FUNCTIONS = {
             ("shipments",): lambda resource_id: data_provider.fetch_shipment_pool().get_shipments(),
