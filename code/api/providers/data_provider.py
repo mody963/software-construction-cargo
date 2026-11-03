@@ -1,5 +1,6 @@
 import functools
 import os
+import json
 
 from Logic.warehouses import Warehouses
 from Logic.locations import Locations
@@ -24,6 +25,15 @@ _ROOT = os.path.abspath(
 )
 
 ROOT_PATH = _ROOT + os.sep
+
+def load_data(filename: str) -> list[dict]:
+    if DEBUG:
+        return []
+
+    file_path = ROOT_PATH + filename
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        return json.load(file)
 
 # Every fetch_X_pool() below used to construct a brand-new model instance
 # (re-reading and json.load()-ing the whole data/*.json file) on every single
@@ -111,7 +121,13 @@ def fetch_order_item_pool():
 
 @singleton_pool
 def fetch_client_pool():
-    return Clients(ROOT_PATH, DEBUG)
+    data = load_data("client.json")
+
+    return Clients(
+        data,
+        ROOT_PATH + "client.json",
+        DEBUG
+    )
 
 @singleton_pool
 def fetch_shipment_pool():
