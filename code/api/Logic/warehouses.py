@@ -2,7 +2,6 @@
 from Logic.GenericRepository import GenericRepository
 from models.warehouse import Warehouse
 
-WAREHOUSES = []
 
 class Warehouses(GenericRepository[Warehouse]):
     def __init__(self, root_path, is_debug=False):
