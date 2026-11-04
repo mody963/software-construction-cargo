@@ -1,4 +1,4 @@
-class Item_Line:
+class Items:
     def __init__(
             self,
             id: int,
