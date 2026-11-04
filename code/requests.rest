@@ -1,2 +1,57 @@
-GET http://localhost:3000/api/v1/item_types
-api_key: d4s2a0b0a1n4a0l0y7t
+
+@baseUrl = http://localhost:3000/api/v1
+@apiKey = d4s2a0b0a1n4a0l0y7t
+
+### GET - Alle clients ophalen
+GET {{baseUrl}}/clients
+API_KEY: {{apiKey}}
+
+
+### GET - Client ophalen op ID
+GET {{baseUrl}}/clients/1
+API_KEY: {{apiKey}}
+
+
+### POST - Nieuwe client toevoegen
+# Pas de JSON-body aan op basis van je client-schema.
+POST {{baseUrl}}/clients
+API_KEY: {{apiKey}}
+Content-Type: application/json
+
+{
+    "id": 999,
+    "name": "Test Client",
+    "address": "Teststraat 10",
+    "city": "Rotterdam",
+    "zip_code": "3000 AA",
+    "province": "Zuid-Holland",
+    "country": "Netherlands",
+    "contact_name": "Test Persoon",
+    "contact_phone": "0612345678",
+    "contact_email": "test@example.com"
+}
+
+
+### PUT - Client aanpassen
+# Pas de JSON-body aan op basis van je client-schema.
+PUT {{baseUrl}}/clients/999
+API_KEY: {{apiKey}}
+Content-Type: application/json
+
+{
+    "id": 999,
+    "name": "Aangepaste Test Client",
+    "address": "Nieuwe Teststraat 20",
+    "city": "Rotterdam",
+    "zip_code": "3000 BB",
+    "province": "Zuid-Holland",
+    "country": "Netherlands",
+    "contact_name": "Test Persoon",
+    "contact_phone": "0612345678",
+    "contact_email": "test@example.com"
+}
+
+
+### DELETE - Client verwijderen
+DELETE {{baseUrl}}/clients/999
+API_KEY: {{apiKey}}
