@@ -1,48 +1,50 @@
-import json
 
-from Logic.base import Base
+from Logic.GenericRepository import GenericRepository
+from models.transfer_item import TransferItem
 
-class TransferItems(Base):
+
+class TransferItems(GenericRepository[TransferItem]):
     """Rows of the `transfer_item` table (id, transfer_id, item_id, amount)."""
 
     def __init__(self, root_path, is_debug=False):
-        self.data_path = root_path + "transfer_item.json"
-        self.load(is_debug)
+        super().__init__(
+            file_path=root_path + "transfer_item.json",
+            model=TransferItem,
+            key_fields=("id",),
+            debug=is_debug
+        )
 
     def get_items_for_transfer(self, transfer_id):
-        result = []
-        for x in self.data:
-            if x["transfer_id"] == transfer_id:
-                result.append(x)
-        return result
+        return [
+            vars(item).copy()
+            for item in self.get_all()
+            if item.transfer_id == transfer_id
+        ]
 
     def set_items_for_transfer(self, transfer_id, items):
         """Replace every item row belonging to `transfer_id` with `items`
         (a list of {item_id, amount} dicts). New surrogate ids are assigned."""
-        self.remove_items_for_transfer(transfer_id)
         next_id = self._next_id()
+        self.remove_items_for_transfer(transfer_id)
+
         for item in items:
             next_id += 1
-            self.data.append({
+            row = {
                 "id": next_id,
                 "transfer_id": transfer_id,
                 "item_id": item["item_id"],
                 "amount": item["amount"],
-            })
+            }
+
+            new_transfer_item = TransferItem(**row)
+            self.insert(new_transfer_item)
 
     def remove_items_for_transfer(self, transfer_id):
-        self.data = [x for x in self.data if x["transfer_id"] != transfer_id]
+        self.data = [
+            item for item in self.data
+            if item.transfer_id != transfer_id
+        ]
+        self.save()
 
     def _next_id(self):
-        return max((x["id"] for x in self.data), default=0)
-
-    def load(self, is_debug):
-        if is_debug:
-            self.data = []
-        else:
-            with open(self.data_path, "r") as f:
-                self.data = json.load(f)
-
-    def save(self):
-        with open(self.data_path, "w") as f:
-            json.dump(self.data, f)
+        return max((item.id for item in self.data), default=0)

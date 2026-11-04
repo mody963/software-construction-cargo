@@ -1,77 +1,76 @@
-import json
 
-from Logic.base import Base
+from Logic.GenericRepository import GenericRepository
+from models.item import Items as Item
 
 ITEMS = []
 
-class Items(Base):
+class Items(GenericRepository[Item]):
     def __init__(self, root_path, is_debug=False):
-        self.data_path = root_path + "item.json"
-        self.load(is_debug)
+        super().__init__(
+            file_path=root_path + "item.json",
+            model=Item,
+            key_fields=("id",),
+            debug=is_debug
+        )
 
     def get_items(self):
-        return self.data
+        return [vars(item).copy() for item in self.get_all()]
 
     def get_item(self, item_id):
-        for x in self.data:
-            if x["id"] == item_id:
-                return x
-        return None
+        item = self.get_by_id(item_id)
+
+        if item is None:
+            return None
+
+        return vars(item).copy()
 
     def get_items_for_item_line(self, item_line_id):
         result = []
         for x in self.data:
-            if x["item_line_id"] == item_line_id:
-                result.append(x["id"])
+            if x.item_line_id == item_line_id:
+                result.append(x.id)
         return result
 
     def get_items_for_item_group(self, item_group_id):
         result = []
         for x in self.data:
-            if x["item_group_id"] == item_group_id:
-                result.append(x["id"])
+            if x.item_group_id == item_group_id:
+                result.append(x.id)
         return result
 
     def get_items_for_item_type(self, item_type_id):
         result = []
         for x in self.data:
-            if x["item_type_id"] == item_type_id:
-                result.append(x["id"])
+            if x.item_type_id == item_type_id:
+                result.append(x.id)
         return result
 
     def get_items_for_supplier(self, supplier_id):
         result = []
         for x in self.data:
-            if x["supplier_id"] == supplier_id:
-                result.append(x)
+            if x.supplier_id == supplier_id:
+                result.append(vars(x).copy())
         return result
 
     def add_item(self, item):
         item["created_at"] = self.get_timestamp()
         item["updated_at"] = self.get_timestamp()
-        self.data.append(item)
+
+        new_item = Item(**item)
+        self.insert(new_item)
 
     def update_item(self, item_id, item):
+        existing_item = self.get_by_id(item_id)
+
+        if existing_item is None:
+            return
+
+        item["id"] = item_id
+        item["created_at"] = existing_item.created_at
         item["updated_at"] = self.get_timestamp()
-        for i in range(len(self.data)):
-            if self.data[i]["id"] == item_id:
-                self.data[i] = item
-                break
+
+        updated_item = Item(**item)
+        self.update(item_id, item=updated_item)
 
     def remove_item(self, item_id):
-        for x in self.data:
-            if x["id"] == item_id:
-                self.data.remove(x)
-
-    def load(self, is_debug):
-        if is_debug:
-            self.data = ITEMS
-        else:
-            f = open(self.data_path, "r")
-            self.data = json.load(f)
-            f.close()
-
-    def save(self):
-        f = open(self.data_path, "w")
-        json.dump(self.data, f)
-        f.close()
+        self.delete(item_id)

@@ -1,25 +1,28 @@
-import json
 
-from Logic.base import Base
+from Logic.GenericRepository import GenericRepository
+from models.transfer import Transfer
 from providers import data_provider
 
 TRANSFERS = []
 
-class Transfers(Base):
+class Transfers(GenericRepository[Transfer]):
     def __init__(self, root_path, is_debug=False):
-        self.data_path = root_path + "transfer.json"
-        self.load(is_debug)
+        super().__init__(
+            file_path=root_path + "transfer.json",
+            model=Transfer,
+            key_fields=("id",),
+            debug=is_debug
+        )
 
     def get_transfers(self):
-        result = []
-        for x in self.data:
-            result.append(self._with_items(x))
-        return result
+        return [self._with_items(transfer) for transfer in self.get_all()]
 
     def get_transfer(self, transfer_id):
-        for x in self.data:
-            if x["id"] == transfer_id:
-                return self._with_items(x)
+        transfer = self.get_by_id(transfer_id)
+
+        if transfer is not None:
+            return self._with_items(transfer)
+
         return None
 
     def get_items_in_transfer(self, transfer_id):
@@ -31,38 +34,34 @@ class Transfers(Base):
         transfer["transfer_status"] = "Scheduled"
         transfer["created_at"] = self.get_timestamp()
         transfer["updated_at"] = self.get_timestamp()
-        self.data.append(transfer)
+
+        new_transfer = Transfer(**transfer)
+        self.insert(new_transfer)
+
         data_provider.fetch_transfer_item_pool().set_items_for_transfer(transfer["id"], items)
 
     def update_transfer(self, transfer_id, transfer):
         items = transfer.pop("items", None)
+        existing_transfer = self.get_by_id(transfer_id)
+
+        if existing_transfer is None:
+            return
+
+        transfer["id"] = transfer_id
+        transfer["created_at"] = existing_transfer.created_at
         transfer["updated_at"] = self.get_timestamp()
-        for i in range(len(self.data)):
-            if self.data[i]["id"] == transfer_id:
-                self.data[i] = transfer
-                break
+
+        updated_transfer = Transfer(**transfer)
+        self.update(transfer_id, item=updated_transfer)
+
         if items is not None:
             data_provider.fetch_transfer_item_pool().set_items_for_transfer(transfer_id, items)
 
     def remove_transfer(self, transfer_id):
-        for x in self.data:
-            if x["id"] == transfer_id:
-                self.data.remove(x)
-                break
+        self.delete(transfer_id)
         data_provider.fetch_transfer_item_pool().remove_items_for_transfer(transfer_id)
 
     def _with_items(self, transfer):
-        transfer = dict(transfer)
+        transfer = vars(transfer).copy()
         transfer["items"] = self.get_items_in_transfer(transfer["id"])
         return transfer
-
-    def load(self, is_debug):
-        if is_debug:
-            self.data = TRANSFERS
-        else:
-            with open(self.data_path, "r") as f:
-                self.data = json.load(f)
-
-    def save(self):
-        with open(self.data_path, "w") as f:
-            json.dump(self.data, f)

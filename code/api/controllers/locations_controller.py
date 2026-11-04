@@ -1,7 +1,8 @@
 from providers import data_provider
+from .base_controller import BaseController
 
 
-class LocationsController:
+class LocationsController(BaseController):
 
     GET_FUNCTIONS = {
             ("locations",): lambda resource_id: data_provider.fetch_location_pool().get_locations(),

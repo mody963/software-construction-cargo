@@ -1,49 +1,47 @@
-import json
 
-from Logic.base import Base
+from Logic.GenericRepository import GenericRepository
+from models.item_group import ItemGroup
 
-ITEM_GROUPS = []
 
-class ItemGroups(Base):
+class ItemGroups(GenericRepository[ItemGroup]):
     def __init__(self, root_path, is_debug=False):
-        self.data_path = root_path + "item_group.json"
-        self.load(is_debug)
+        super().__init__(
+            file_path=root_path + "item_group.json",
+            model=ItemGroup,
+            key_fields=("id",),
+            debug=is_debug
+        )
 
     def get_item_groups(self):
-        return self.data
+        return [vars(item_group).copy() for item_group in self.get_all()]
 
     def get_item_group(self, item_group_id):
-        for x in self.data:
-            if x["id"] == item_group_id:
-                return x
-        return None
+        item_group = self.get_by_id(item_group_id)
+
+        if item_group is None:
+            return None
+
+        return vars(item_group).copy()
 
     def add_item_group(self, item_group):
         item_group["created_at"] = self.get_timestamp()
         item_group["updated_at"] = self.get_timestamp()
-        self.data.append(item_group)
+
+        new_item_group = ItemGroup(**item_group)
+        self.insert(new_item_group)
 
     def update_item_group(self, item_group_id, item_group):
+        existing_item_group = self.get_by_id(item_group_id)
+
+        if existing_item_group is None:
+            return
+
+        item_group["id"] = item_group_id
+        item_group["created_at"] = existing_item_group.created_at
         item_group["updated_at"] = self.get_timestamp()
-        for i in range(len(self.data)):
-            if self.data[i]["id"] == item_group_id:
-                self.data[i] = item_group
-                break
+
+        updated_item_group = ItemGroup(**item_group)
+        self.update(item_group_id, item=updated_item_group)
 
     def remove_item_group(self, item_group_id):
-        for x in self.data:
-            if x["id"] == item_group_id:
-                self.data.remove(x)
-
-    def load(self, is_debug):
-        if is_debug:
-            self.data = ITEM_GROUPS
-        else:
-            f = open(self.data_path, "r")
-            self.data = json.load(f)
-            f.close()
-
-    def save(self):
-        f = open(self.data_path, "w")
-        json.dump(self.data, f)
-        f.close()
+        self.delete(item_group_id)

@@ -1,49 +1,47 @@
-import json
 
-from Logic.base import Base
+from Logic.GenericRepository import GenericRepository
+from models.supplier import Supplier
 
-SUPPLIERS = []
 
-class Suppliers(Base):
+class Suppliers(GenericRepository[Supplier]):
     def __init__(self, root_path, is_debug=False):
-        self.data_path = root_path + "supplier.json"
-        self.load(is_debug)
+        super().__init__(
+            file_path=root_path + "supplier.json",
+            model=Supplier,
+            key_fields=("id",),
+            debug=is_debug
+        )
 
     def get_suppliers(self):
-        return self.data
+        return [vars(supplier).copy() for supplier in self.get_all()]
 
     def get_supplier(self, supplier_id):
-        for x in self.data:
-            if x["id"] == supplier_id:
-                return x
-        return None
+        supplier = self.get_by_id(supplier_id)
+
+        if supplier is None:
+            return None
+
+        return vars(supplier).copy()
 
     def add_supplier(self, supplier):
         supplier["created_at"] = self.get_timestamp()
         supplier["updated_at"] = self.get_timestamp()
-        self.data.append(supplier)
+
+        new_supplier = Supplier(**supplier)
+        self.insert(new_supplier)
 
     def update_supplier(self, supplier_id, supplier):
+        existing_supplier = self.get_by_id(supplier_id)
+
+        if existing_supplier is None:
+            return
+
+        supplier["id"] = supplier_id
+        supplier["created_at"] = existing_supplier.created_at
         supplier["updated_at"] = self.get_timestamp()
-        for i in range(len(self.data)):
-            if self.data[i]["id"] == supplier_id:
-                self.data[i] = supplier
-                break
+
+        updated_supplier = Supplier(**supplier)
+        self.update(supplier_id, item=updated_supplier)
 
     def remove_supplier(self, supplier_id):
-        for x in self.data:
-            if x["id"] == supplier_id:
-                self.data.remove(x)
-
-    def load(self, is_debug):
-        if is_debug:
-            self.data = SUPPLIERS
-        else:
-            f = open(self.data_path, "r")
-            self.data = json.load(f)
-            f.close()
-
-    def save(self):
-        f = open(self.data_path, "w")
-        json.dump(self.data, f)
-        f.close()
+        self.delete(supplier_id)

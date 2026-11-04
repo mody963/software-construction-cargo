@@ -1,49 +1,47 @@
-import json
 
-from Logic.base import Base
+from Logic.GenericRepository import GenericRepository
+from models.warehouse import Warehouse
 
-WAREHOUSES = []
 
-class Warehouses(Base):
+class Warehouses(GenericRepository[Warehouse]):
     def __init__(self, root_path, is_debug=False):
-        self.data_path = root_path + "warehouse.json"
-        self.load(is_debug)
+        super().__init__(
+            file_path=root_path + "warehouse.json",
+            model=Warehouse,
+            key_fields=("id",),
+            debug=is_debug
+        )
 
     def get_warehouses(self):
-        return self.data
+        return [vars(warehouse).copy() for warehouse in self.get_all()]
 
     def get_warehouse(self, warehouse_id):
-        for x in self.data:
-            if x["id"] == warehouse_id:
-                return x
-        return None
+        warehouse = self.get_by_id(warehouse_id)
+
+        if warehouse is None:
+            return None
+
+        return vars(warehouse).copy()
 
     def add_warehouse(self, warehouse):
         warehouse["created_at"] = self.get_timestamp()
         warehouse["updated_at"] = self.get_timestamp()
-        self.data.append(warehouse)
+
+        new_warehouse = Warehouse(**warehouse)
+        self.insert(new_warehouse)
 
     def update_warehouse(self, warehouse_id, warehouse):
+        existing_warehouse = self.get_by_id(warehouse_id)
+
+        if existing_warehouse is None:
+            return
+
+        warehouse["id"] = warehouse_id
+        warehouse["created_at"] = existing_warehouse.created_at
         warehouse["updated_at"] = self.get_timestamp()
-        for i in range(len(self.data)):
-            if self.data[i]["id"] == warehouse_id:
-                self.data[i] = warehouse
-                break
+
+        updated_warehouse = Warehouse(**warehouse)
+        self.update(warehouse_id, item=updated_warehouse)
 
     def remove_warehouse(self, warehouse_id):
-        for x in self.data:
-            if x["id"] == warehouse_id:
-                self.data.remove(x)
-
-    def load(self, is_debug):
-        if is_debug:
-            self.data = WAREHOUSES
-        else:
-            f = open(self.data_path, "r")
-            self.data = json.load(f)
-            f.close()
-
-    def save(self):
-        f = open(self.data_path, "w")
-        json.dump(self.data, f)
-        f.close()
+        self.delete(warehouse_id)

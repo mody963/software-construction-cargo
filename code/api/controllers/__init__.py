@@ -1,3 +1,4 @@
+from .base_controller import BaseController
 from .warehouses_controller import WarehousesController
 from .locations_controller import LocationsController
 from .transfers_controller import TransfersController

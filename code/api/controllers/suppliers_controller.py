@@ -1,7 +1,8 @@
 from providers import data_provider
+from .base_controller import BaseController
 
 
-class SuppliersController:
+class SuppliersController(BaseController):
 
     GET_FUNCTIONS = {
             ("suppliers",): lambda resource_id: data_provider.fetch_supplier_pool().get_suppliers(),
