@@ -1,6 +1,6 @@
 import json
 
-from models.base import Base
+from Logic.base import Base
 
 LOCATIONS = []
 

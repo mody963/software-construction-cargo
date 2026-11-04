@@ -1,6 +1,6 @@
 import json
 
-from models.base import Base
+from Logic.base import Base
 
 class OrderItems(Base):
     def __init__(self, root_path, is_debug=False):
