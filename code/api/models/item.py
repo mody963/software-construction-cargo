@@ -2,7 +2,7 @@ class Items:
     def __init__(
             self,
             id: int,
-            name: str,
+            code: str,
             description: str,
             barcode:str,
             model_number:str,
@@ -21,7 +21,7 @@ class Items:
             updated_at: str
     ):
         self.id=id
-        self.name=name
+        self.code=code
         self.description=description
         self.barcode=barcode
         self.model_number=model_number

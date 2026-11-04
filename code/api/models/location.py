@@ -1,5 +1,5 @@
 class Location:
-    def __int__(
+    def __init__(
         self, 
         id: int,
         warehouse_id: int,
