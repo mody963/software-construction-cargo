@@ -1,25 +1,28 @@
-import json
-
-from Logic.base import Base
+from Logic.GenericRepository import GenericRepository
+from models.order import Order
 from providers import data_provider
 
 ORDERS = []
 
-class Orders(Base):
+class Orders(GenericRepository[Order]):
     def __init__(self, root_path, is_debug=False):
-        self.data_path = root_path + "order.json"
-        self.load(is_debug)
+        super().__init__(
+            file_path=root_path + "order.json",
+            model=Order,
+            key_fields=("id",),
+            debug=is_debug
+        )
 
     def get_orders(self):
         result = []
-        for x in self.data:
+        for x in self.get_all():
             result.append(self._with_items(x))
         return result
 
     def get_order(self, order_id):
-        for x in self.data:
-            if x["id"] == order_id:
-                return self._with_items(x)
+        order = self.get_by_id(order_id)
+        if order is not None:
+            return self._with_items(order)
         return None
 
     def get_items_in_order(self, order_id):
@@ -29,9 +32,9 @@ class Orders(Base):
     def get_orders_for_client(self, client_id):
         result = []
         for x in self.data:
-            if (x["client_id"] == client_id
-                    or x["ship_to_client_id"] == client_id
-                    or x["bill_to_client_id"] == client_id):
+            if (x.client_id == client_id
+                    or x.ship_to_client_id == client_id
+                    or x.bill_to_client_id == client_id):
                 result.append(self._with_items(x))
         return result
 
@@ -39,16 +42,26 @@ class Orders(Base):
         items = order.pop("items", [])
         order["created_at"] = self.get_timestamp()
         order["updated_at"] = self.get_timestamp()
-        self.data.append(order)
+
+        new_order = Order(**order)
+        self.insert(new_order)
+
         data_provider.fetch_order_item_pool().set_items_for_order(order["id"], items)
 
     def update_order(self, order_id, order):
         items = order.pop("items", None)
+        existing_order = self.get_by_id(order_id)
+
+        if existing_order is None:
+            return
+
+        order["id"] = order_id
+        order["created_at"] = existing_order.created_at
         order["updated_at"] = self.get_timestamp()
-        for i in range(len(self.data)):
-            if self.data[i]["id"] == order_id:
-                self.data[i] = order
-                break
+
+        updated_order = Order(**order)
+        self.update(order_id, item=updated_order)
+
         if items is not None:
             self.update_items_in_order(order_id, items)
 
@@ -84,24 +97,10 @@ class Orders(Base):
         inventory_pool.update_inventory(item_id, target["location_id"], target)
 
     def remove_order(self, order_id):
-        for x in self.data:
-            if x["id"] == order_id:
-                self.data.remove(x)
-                break
+        self.delete(order_id)
         data_provider.fetch_order_item_pool().remove_items_for_order(order_id)
 
     def _with_items(self, order):
-        order = dict(order)
+        order = vars(order).copy()
         order["items"] = self.get_items_in_order(order["id"])
         return order
-
-    def load(self, is_debug):
-        if is_debug:
-            self.data = ORDERS
-        else:
-            with open(self.data_path, "r") as f:
-                self.data = json.load(f)
-
-    def save(self):
-        with open(self.data_path, "w") as f:
-            json.dump(self.data, f)

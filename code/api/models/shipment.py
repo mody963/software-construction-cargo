@@ -3,14 +3,15 @@ class Shipment:
         self,
         id: int,
         reference: str,
-        order_id: int,
+        order_id: int | None,
         shipment_date: str,
         shipment_type: str,
         shipment_status: str,
         carrier_name: str,
         shipping_method: str,
         payment_type: str,
-        updated_at: str
+        updated_at: str,
+        created_at: str | None = None
     ):
         self.id = id
         self.reference = reference
@@ -22,3 +23,4 @@ class Shipment:
         self.shipping_method = shipping_method
         self.payment_type = payment_type
         self.updated_at = updated_at
+        self.created_at = created_at

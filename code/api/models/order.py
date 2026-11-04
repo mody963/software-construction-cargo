@@ -9,11 +9,12 @@ class Order:
         reference: str,
         customer_po_number: str,
         order_status: str,
-        shipping_notes: str,
+        shipping_notes: str | None,
         warehouse_id: int,
         ship_to_client_id: int,
         bill_to_client_id: int,
-        updated_at: str
+        updated_at: str,
+        created_at: str | None = None
     ):
         self.id = id
         self.client_id = client_id
@@ -27,3 +28,4 @@ class Order:
         self.ship_to_client_id = ship_to_client_id
         self.bill_to_client_id = bill_to_client_id
         self.updated_at = updated_at
+        self.created_at = created_at

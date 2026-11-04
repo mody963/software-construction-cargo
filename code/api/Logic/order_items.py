@@ -1,22 +1,27 @@
-import json
+from Logic.GenericRepository import GenericRepository
+from models.order_item import OrderItem
 
-from Logic.base import Base
 
-class OrderItems(Base):
+class OrderItems(GenericRepository[OrderItem]):
     def __init__(self, root_path, is_debug=False):
-        self.data_path = root_path + "order_item.json"
-        self.load(is_debug)
+        super().__init__(
+            file_path=root_path + "order_item.json",
+            model=OrderItem,
+            key_fields=("id",),
+            debug=is_debug
+        )
 
     def get_items_for_order(self, order_id):
         result = []
         for x in self.data:
-            if x["order_id"] == order_id:
-                result.append(x)
+            if x.order_id == order_id:
+                result.append(vars(x).copy())
         return result
 
     def set_items_for_order(self, order_id, items):
-        self.remove_items_for_order(order_id)
         next_id = self._next_id()
+        self.remove_items_for_order(order_id)
+
         for item in items:
             next_id += 1
             row = {
@@ -27,21 +32,13 @@ class OrderItems(Base):
             }
             if "unit_price" in item:
                 row["unit_price"] = item["unit_price"]
-            self.data.append(row)
+
+            new_order_item = OrderItem(**row)
+            self.insert(new_order_item)
 
     def remove_items_for_order(self, order_id):
-        self.data = [x for x in self.data if x["order_id"] != order_id]
+        self.data = [x for x in self.data if x.order_id != order_id]
+        self.save()
 
     def _next_id(self):
-        return max((x["id"] for x in self.data), default=0)
-
-    def load(self, is_debug):
-        if is_debug:
-            self.data = []
-        else:
-            with open(self.data_path, "r") as f:
-                self.data = json.load(f)
-
-    def save(self):
-        with open(self.data_path, "w") as f:
-            json.dump(self.data, f)
+        return max((x.id for x in self.data), default=0)
