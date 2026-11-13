@@ -1,0 +1,84 @@
+name: API CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # JOB 1: Codekwaliteit controleren (Linting)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+        cache: 'pip'
+        
+    - name: Install dependencies
+      working-directory: ./code
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f api/requirements.txt ]; then pip install -r api/requirements.txt; fi
+        
+    - name: Lint with flake8
+      working-directory: ./code
+      run: |
+        # Stop the build if there are syntax errors
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all other stylistic errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+
+  # JOB 2: Server starten & Testen (met Code Coverage)
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: development # Hier koppelen we het aan de GitHub Environment!
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+        cache: 'pip'
+        
+    - name: Install dependencies
+      working-directory: ./code
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f api/requirements.txt ]; then pip install -r api/requirements.txt; fi
+        
+    - name: Start API Server
+      working-directory: ./code/api
+      run: |
+        # Start de server in de achtergrond
+        python main.py &
+        sleep 3
+        
+    - name: Test with pytest & run coverage
+      working-directory: ./code
+      run: |
+        # Draai de testen en sla de coverage op
+        coverage run -m pytest test/integration/
+        coverage xml
+        
+    - name: Run code coverage report
+      working-directory: ./code
+      run: |
+        # Schrijf rapportage naar de GitHub samenvatting
+        coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
+        
+        # Laat de pipeline falen als de coverage onder de 70% ligt 
+        coverage report --fail-under=70
+        
+    - name: Store coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: code/coverage.xml
+      if: ${{ failure() }}
