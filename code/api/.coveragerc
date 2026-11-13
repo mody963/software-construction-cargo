@@ -1,0 +1,3 @@
+[run]
+# Negeer de testbestanden bij het berekenen van het dekkingspercentage
+omit = test/*

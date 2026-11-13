@@ -10,7 +10,7 @@ NOTIFICATION_UPDATE_INTERVAL_SEC = 30
 _queue = ["Dummy message"]
 
 def push(notification):
-    global _queue
+    #global _queue
     _queue.append(notification)
 
 def send():

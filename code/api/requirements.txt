@@ -1,0 +1,6 @@
+jsonschema
+requests
+pytest
+pytest-cov
+coverage
+flake8
