@@ -205,7 +205,7 @@ def test_post_orders_different_ids_simultaneously_201(_data: dict[str, str]) -> 
     url = _orders_url(_data)
     first, second = _new_test_order(), _new_test_order()
 
-    
+
     while second["id"] == first["id"]:     
         second = _new_test_order()
     with ThreadPoolExecutor(max_workers=2) as executor:
@@ -228,14 +228,52 @@ def test_post_order_amount_more_than_stock_400(_data: dict[str, str]) -> None:
     assert response.status_code == 400
     assert requests.get(f"{_orders_url(_data)}/{body['id']}", headers=_order_headers(_data), timeout=15).status_code == 404
 
+def test_post_order_amount_zero_400(_data: dict[str, str]) -> None:
 
+    body = _new_test_order([{"item_id": 1, "amount": 0}])  
+    response = requests.post(_orders_url(_data), headers=_order_headers(_data), json=body, timeout=15)
+    assert response.status_code == 400
+
+
+
+def test_post_order_amount_negative_400(_data: dict[str, str]) -> None:
+
+    body = _new_test_order([{"item_id": 1, "amount": -5}])
+
+    response = requests.post(_orders_url(_data), headers=_order_headers(_data), json=body, timeout=15)
+    assert response.status_code == 400
+
+  
+def test_post_order_same_item_twice_400(_data: dict[str, str]) -> None:
+
+    body = _new_test_order([{"item_id": 1, "amount": 2}, {"item_id": 1, "amount": 3}])
+    response = requests.post(_orders_url(_data), headers=_order_headers(_data), json=body, timeout=15)
+    assert response.status_code == 400
+
+
+
+def test_post_order_item_not_found_400(_data: dict[str, str]) -> None:
+    body = _new_test_order([{"item_id": 999999999, "amount": 1}])
+
+    response = requests.post(_orders_url(_data), headers=_order_headers(_data), json=body, timeout=15)
+    assert response.status_code == 400
+
+
+
+
+def test_post_order_client_not_found_400(_data: dict[str, str]) -> None:
+    body = _new_test_order()
+    body["client_id"] = 999999999
+    # ghjk
+    response = requests.post(_orders_url(_data), headers=_order_headers(_data), json=body, timeout=15)
+    assert response.status_code == 400
 
 #------------------------------------------------------------------PUT-------------------------------------------------------------
 
 def test_put_order_200(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}orders/1"
     json_body: dict[str, Any] = {
-        "id": 1, # let op: id moet expliciet mee anders raakt de bestaandeecord z'n id kwijt
+        "id": 1, # let op: id moet - mee anders raakt de bestaandeecord z'n id kwijt   
         "client_id": 123,
         "order_date": "2025-03-05T04:42:29Z",
         "request_date": "2025-03-09T00:27:04Z",
