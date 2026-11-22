@@ -1,6 +1,8 @@
 import pytest
 import requests
 from typing import Any
+from concurrent.futures import ThreadPoolExecutor # dit is om te zorgen dat je de 2 orders tegelijkertijd kunt proberen te doen want anders gaat het gewoon na mekaar zijnb
+from uuid import uuid4
 
 # zorg dat je zelf de juiste api key invult voor de werkende tests 
 # en mocht je een foute key willen hebben qua test let er dan op. 
@@ -92,6 +94,33 @@ def test_get_order_items_200(_data: dict[str, str]) -> None:
 
 #--------------------------------------POST------------------------------------
 
+def _new_test_order(items=None):
+    # Een unieke ID voorkomt botsingen met eerdere testruns.
+    order_id = 900000000 + (uuid4().int % 100000000)
+    return {
+        "id": order_id,
+        "client_id": 1,
+        "order_date": "2026-11-11T10:00:00Z",
+        "request_date": "2026-11-12T10:00:00Z",
+        "reference": f"ORD-EDGE-{order_id}",
+        "customer_po_number": f"PO-EDGE-{order_id}",
+        "order_status": "Pending",
+        "shipping_notes": None,
+        "warehouse_id": 1,
+        "ship_to_client_id": 1,
+        "bill_to_client_id": 1,
+        "items": items if items is not None else [{"item_id": 1, "amount": 1}],
+    }
+
+
+def _orders_url(_data):
+    return f"http://{_data['host']}{_data['api_path']}orders"
+
+
+def _order_headers(_data):
+    return {"API_KEY": _data["api_key"]}
+
+
 def test_post_order_201(_data: dict[str, str]) -> None:
     url: str = f"http://{_data['host']}{_data['api_path']}orders"
     json_body: dict[str, Any] = {
@@ -158,6 +187,26 @@ def test_post_order_wrong_key_403(_data: dict[str, str]) -> None:
     assert response.status_code == 403
 
 
+# ------------ extra post tests erbij maken mbv feedback jurn---------------------- --------------------------
+# Deze tests beschrijven gewenst gedrag; sommige tonen bugs in de huidige API.
+# Gebruik bij voorkeur een aparte testserver met testdata: POST/PUT wijzigen data.
+
+def test_post_order_same_id_twice_simultaneously_409(_data: dict[str, str]) -> None:
+    # Twee gelijktijdige POSTs met hetzelfde ID: exact een mag slagen.
+    url = _orders_url(_data)
+    body = _new_test_order()
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(requests.post, url, headers=_order_headers(_data), json=body, timeout=15) for _ in range(2)]
+        responses = [future.result() for future in futures]
+    assert sorted(response.status_code for response in responses) == [201, 409]
+    response = requests.get(f"{url}/{body['id']}", headers=_order_headers(_data), timeout=15)
+    assert response.status_code == 200
+    assert sum(order["id"] == body["id"] for order in requests.get(url, headers=_order_headers(_data), timeout=15).json()) == 1
+
+
+
+
+
 #------------------------------------------------------------------PUT-------------------------------------------------------------
 
 def test_put_order_200(_data: dict[str, str]) -> None:
@@ -215,6 +264,36 @@ def test_put_order_wrong_key_403(_data: dict[str, str]) -> None:
     response: requests.Response = requests.put(url, headers={'API_KEY': NO_ACCESS_API_KEY}, json=json_body)
 
     assert response.status_code == 403
+
+
+# ---------------------- EXTRA PUT EDGE CASE TESTS ---------------------------
+
+def test_put_order_not_found_404(_data: dict[str, str]) -> None:
+    # PUT op een onbekend order-ID mag geen succesvolle wijziging melden.
+    body = _new_test_order()
+    response = requests.put(f"{_orders_url(_data)}/{body['id']}", headers=_order_headers(_data), json=body, timeout=15)
+    assert response.status_code == 404
+    assert requests.get(f"{_orders_url(_data)}/{body['id']}", headers=_order_headers(_data), timeout=15).status_code == 404
+
+
+def test_put_order_simultaneously_no_lost_data_200(_data: dict[str, str]) -> None:
+    # Twee gelijktijdige wijzigingen aan verschillende velden mogen elkaar niet wissen.
+    url = _orders_url(_data)
+    body = _new_test_order()
+    created = requests.post(url, headers=_order_headers(_data), json=body, timeout=15)
+    assert created.status_code == 201
+    first = body.copy()
+    first["order_status"] = "Processing"
+    second = body.copy()
+    second["shipping_notes"] = "Gelijktijdige testnotitie"
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(requests.put, f"{url}/{body['id']}", headers=_order_headers(_data), json=update, timeout=15) for update in (first, second)]
+        responses = [future.result() for future in futures]
+    assert all(response.status_code == 200 for response in responses)
+    result = requests.get(f"{url}/{body['id']}", headers=_order_headers(_data), timeout=15)
+    assert result.status_code == 200
+    assert result.json()["order_status"] == "Processing"
+    assert result.json()["shipping_notes"] == "Gelijktijdige testnotitie"
 
 
 #---DELETE-------------------------------------------------------------------------------------------------
