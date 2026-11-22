@@ -2,7 +2,7 @@ import pytest
 import requests
 from typing import Any
 from concurrent.futures import ThreadPoolExecutor # dit is om te zorgen dat je de 2 orders tegelijkertijd kunt proberen te doen want anders gaat het gewoon na mekaar zijnb
-from uuid import uuid4
+from uuid import uuid4 # is voor unieke id creeatie
 
 # zorg dat je zelf de juiste api key invult voor de werkende tests 
 # en mocht je een foute key willen hebben qua test let er dan op. 
@@ -95,7 +95,6 @@ def test_get_order_items_200(_data: dict[str, str]) -> None:
 #--------------------------------------POST------------------------------------
 
 def _new_test_order(items=None):
-    # Een unieke ID voorkomt botsingen met eerdere testruns.
     order_id = 900000000 + (uuid4().int % 100000000)
     return {
         "id": order_id,
@@ -188,11 +187,8 @@ def test_post_order_wrong_key_403(_data: dict[str, str]) -> None:
 
 
 # ------------ extra post tests erbij maken mbv feedback jurn---------------------- --------------------------
-# Deze tests beschrijven gewenst gedrag; sommige tonen bugs in de huidige API.
-# Gebruik bij voorkeur een aparte testserver met testdata: POST/PUT wijzigen data.
-
 def test_post_order_same_id_twice_simultaneously_409(_data: dict[str, str]) -> None:
-    # Twee gelijktijdige POSTs met hetzelfde ID: exact een mag slagen.
+    # Twee gelijktijdige POSTs met hetzelfde ID: exact een mag slagen
     url = _orders_url(_data)
     body = _new_test_order()
     with ThreadPoolExecutor(max_workers=2) as executor:
@@ -204,6 +200,33 @@ def test_post_order_same_id_twice_simultaneously_409(_data: dict[str, str]) -> N
     assert sum(order["id"] == body["id"] for order in requests.get(url, headers=_order_headers(_data), timeout=15).json()) == 1
 
 
+def test_post_orders_different_ids_simultaneously_201(_data: dict[str, str]) -> None:
+    # Beide gelijktijdige aanvragen met verschillende IDs moeten worden blijben bewaard blijven 
+    url = _orders_url(_data)
+    first, second = _new_test_order(), _new_test_order()
+
+    
+    while second["id"] == first["id"]:     
+        second = _new_test_order()
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(requests.post, url, headers=_order_headers(_data), json=body, timeout=15) for body in (first, second)]
+        responses = [future.result() for future in futures]   
+    assert all(response.status_code == 201 for response in responses)
+    for body in (first, second):
+        response = requests.get(f"{url}/{body['id']}", headers=_order_headers(_data), timeout=15)
+        assert response.status_code == 200 
+        assert response.json()["reference"] == body["reference"]    
+
+
+def test_post_order_amount_more_than_stock_400(_data: dict[str, str]) -> None:
+    # eenextreem grote hoeveelheid mag niet worden geaccept
+    body = _new_test_order([{"item_id": 1, "amount": 1000000000}])    
+
+    response = requests.post(_orders_url(_data), headers=_order_headers(_data), json=body, timeout=15)
+
+
+    assert response.status_code == 400
+    assert requests.get(f"{_orders_url(_data)}/{body['id']}", headers=_order_headers(_data), timeout=15).status_code == 404
 
 
 
