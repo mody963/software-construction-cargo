@@ -3,6 +3,10 @@ import requests
 from typing import Any  # omdat ik nog een oude versie heb werkt de any niet maar dat is nodig voor de typehinting
 # zorg dat je zelf de juiste api key invult voor de werkende tests 
 # en mocht je een foute key willen hebben qua test let er dan op. 
+from concurrent.futures import ThreadPoolExecutor # om te zorgen dat dingen tegelijkertijd runnen. 
+from uuid import uuid4 # unieque id creation
+
+
 @pytest.fixture
 def _data():
     return {
